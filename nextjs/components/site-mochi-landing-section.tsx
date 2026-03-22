@@ -562,8 +562,10 @@ function DesktopMemoriesWindow({
 
 function DesktopPersonalizeWindow({
   isSpanish,
+  onOpenMarketplace,
 }: {
   isSpanish: boolean;
+  onOpenMarketplace: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<"mascot" | "appearance" | "site">("mascot");
   const tabs: Array<{ key: "mascot" | "appearance" | "site"; label: string }> = [
@@ -594,7 +596,7 @@ function DesktopPersonalizeWindow({
         })}
       </div>
       <div className="min-h-0 flex-1 overflow-hidden">
-        <SiteMochiCompactConfigWindow activeTab={activeTab} fillHeight />
+        <SiteMochiCompactConfigWindow activeTab={activeTab} fillHeight onOpenMarketplace={onOpenMarketplace} />
       </div>
     </section>
   );
@@ -681,6 +683,7 @@ export function SiteMochiLandingSection() {
   const activeWindowMeta = activeDesktopWindow
     ? CONFIG_WINDOW_META.find((item) => item.key === activeDesktopWindow) ?? null
     : null;
+  const compactConfigActiveTab = activeWindowMeta?.key ?? null;
 
   const handleWalletButtonClick = () => {
     if (isConnected) {
@@ -947,6 +950,10 @@ export function SiteMochiLandingSection() {
     setDesktopWindowPosition(null);
     setDesktopWindowSize(null);
     setActiveDesktopWindow(tab);
+  };
+
+  const handleOpenMarketplaceWindow = () => {
+    handleShortcutOpen("marketplace");
   };
 
   const handleShortcutPointerDown = (
@@ -1358,7 +1365,7 @@ export function SiteMochiLandingSection() {
                   } : undefined}
                 >
                   {activeDesktopWindow === "personalize" ? (
-                    <DesktopPersonalizeWindow isSpanish={isSpanish} />
+                    <DesktopPersonalizeWindow isSpanish={isSpanish} onOpenMarketplace={handleOpenMarketplaceWindow} />
                   ) : embeddedWindowPath ? (
                     <iframe
                       key={`${embeddedWindowPath}-${language}`}
@@ -1374,8 +1381,12 @@ export function SiteMochiLandingSection() {
                       messages={memoryMessages}
                       onClear={handleClearMemories}
                     />
-                  ) : activeDesktopWindow ? (
-                    <SiteMochiCompactConfigWindow activeTab={activeDesktopWindow} fillHeight />
+                  ) : compactConfigActiveTab ? (
+                    <SiteMochiCompactConfigWindow
+                      activeTab={compactConfigActiveTab}
+                      fillHeight
+                      onOpenMarketplace={handleOpenMarketplaceWindow}
+                    />
                   ) : null}
                 </div>
               </div>

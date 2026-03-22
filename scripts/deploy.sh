@@ -114,6 +114,11 @@ refresh_pending_nonce() {
   CURRENT_NONCE="$(cast nonce --block pending --rpc-url "$rpc_url" "$deployer_address")"
 }
 
+DEPLOY_RESULT_JSON=""
+DEPLOY_RESULT_ADDRESS=""
+DEPLOY_RESULT_TX=""
+NEXT_NONCE_RESULT=""
+
 deploy_contract() {
   local rpc_url="$1"
   local private_key="$2"
@@ -123,9 +128,12 @@ deploy_contract() {
   local out nonce next
   deployer_address="$(cast wallet address --private-key "$private_key")"
   while true; do
-    nonce="$(next_nonce)"
+    next_nonce
+    nonce="$NEXT_NONCE_RESULT"
     out="$(cd "$FOUNDRY_DIR" && forge create "$contract" --rpc-url "$rpc_url" --private-key "$private_key" --broadcast --nonce "$nonce" --json "$@" 2>&1)" && {
-      printf '%s' "$out"
+      DEPLOY_RESULT_JSON="$out"
+      DEPLOY_RESULT_ADDRESS="$(printf '%s' "$out" | extract_address)"
+      DEPLOY_RESULT_TX="$(printf '%s' "$out" | extract_tx_hash)"
       return 0
     }
     next="$(printf '%s' "$out" | sed -nE 's/.*nonce too low: next nonce ([0-9]+), tx nonce [0-9]+.*/\1/p' | tail -n1)"
@@ -154,7 +162,8 @@ send_transaction() {
   local nonce out next
   deployer_address="$(cast wallet address --private-key "$private_key")"
   while true; do
-    nonce="$(next_nonce)"
+    next_nonce
+    nonce="$NEXT_NONCE_RESULT"
     out="$(cast send --rpc-url "$rpc_url" --private-key "$private_key" --nonce "$nonce" "$to" "$signature" "$@" 2>&1)" && return 0
     next="$(printf '%s' "$out" | sed -nE 's/.*nonce too low: next nonce ([0-9]+), tx nonce [0-9]+.*/\1/p' | tail -n1)"
     if [ -n "$next" ]; then
@@ -183,7 +192,8 @@ send_value_transaction() {
   local nonce out next
   deployer_address="$(cast wallet address --private-key "$private_key")"
   while true; do
-    nonce="$(next_nonce)"
+    next_nonce
+    nonce="$NEXT_NONCE_RESULT"
     out="$(cast send --rpc-url "$rpc_url" --private-key "$private_key" --nonce "$nonce" --value "$value" "$to" "$signature" "$@" 2>&1)" && return 0
     next="$(printf '%s' "$out" | sed -nE 's/.*nonce too low: next nonce ([0-9]+), tx nonce [0-9]+.*/\1/p' | tail -n1)"
     if [ -n "$next" ]; then
@@ -210,9 +220,8 @@ call_contract() {
 }
 
 next_nonce() {
-  local nonce="$CURRENT_NONCE"
+  NEXT_NONCE_RESULT="$CURRENT_NONCE"
   CURRENT_NONCE=$((CURRENT_NONCE + 1))
-  printf '%s' "$nonce"
 }
 
 seed_showcase_data() {
@@ -347,47 +356,56 @@ if [ "$NETWORK" = "local" ]; then
 
   (cd "$FOUNDRY_DIR" && forge build >/dev/null)
 
-  MOCK_USDC_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MockUSDC.sol:MockUSDC --constructor-args "$DEPLOYER_ADDRESS")"
-  MOCK_USDC_ADDRESS="$(printf '%s' "$MOCK_USDC_JSON" | extract_address)"
-  MOCK_USDC_TX="$(printf '%s' "$MOCK_USDC_JSON" | extract_tx_hash)"
+  deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MockUSDC.sol:MockUSDC --constructor-args "$DEPLOYER_ADDRESS"
+  MOCK_USDC_JSON="$DEPLOY_RESULT_JSON"
+  MOCK_USDC_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+  MOCK_USDC_TX="$DEPLOY_RESULT_TX"
 
-  ORACLE_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MockPriceOracle.sol:MockPriceOracle --constructor-args "$DEPLOYER_ADDRESS" 250000000000)"
-  ORACLE_ADDRESS="$(printf '%s' "$ORACLE_JSON" | extract_address)"
-  ORACLE_TX="$(printf '%s' "$ORACLE_JSON" | extract_tx_hash)"
+  deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MockPriceOracle.sol:MockPriceOracle --constructor-args "$DEPLOYER_ADDRESS" 250000000000
+  ORACLE_JSON="$DEPLOY_RESULT_JSON"
+  ORACLE_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+  ORACLE_TX="$DEPLOY_RESULT_TX"
 
-  NFT_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiNFT.sol:MochiNFT --constructor-args "$DEPLOYER_ADDRESS")"
-  NFT_ADDRESS="$(printf '%s' "$NFT_JSON" | extract_address)"
-  NFT_TX="$(printf '%s' "$NFT_JSON" | extract_tx_hash)"
+  deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiNFT.sol:MochiNFT --constructor-args "$DEPLOYER_ADDRESS"
+  NFT_JSON="$DEPLOY_RESULT_JSON"
+  NFT_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+  NFT_TX="$DEPLOY_RESULT_TX"
 
-  EDITIONS_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiEditions.sol:MochiEditions --constructor-args "$DEPLOYER_ADDRESS")"
-  EDITIONS_ADDRESS="$(printf '%s' "$EDITIONS_JSON" | extract_address)"
-  EDITIONS_TX="$(printf '%s' "$EDITIONS_JSON" | extract_tx_hash)"
+  deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiEditions.sol:MochiEditions --constructor-args "$DEPLOYER_ADDRESS"
+  EDITIONS_JSON="$DEPLOY_RESULT_JSON"
+  EDITIONS_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+  EDITIONS_TX="$DEPLOY_RESULT_TX"
 
-  AUCTION_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiAuction.sol:MochiAuction --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS" "$MOCK_USDC_ADDRESS" "$ORACLE_ADDRESS")"
-  AUCTION_ADDRESS="$(printf '%s' "$AUCTION_JSON" | extract_address)"
-  AUCTION_TX="$(printf '%s' "$AUCTION_JSON" | extract_tx_hash)"
+  deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiAuction.sol:MochiAuction --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS" "$MOCK_USDC_ADDRESS" "$ORACLE_ADDRESS"
+  AUCTION_JSON="$DEPLOY_RESULT_JSON"
+  AUCTION_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+  AUCTION_TX="$DEPLOY_RESULT_TX"
 
-  MARKETPLACE_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiMarketplace.sol:MochiMarketplace --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS" "$EDITIONS_ADDRESS" "$MOCK_USDC_ADDRESS")"
-  MARKETPLACE_ADDRESS="$(printf '%s' "$MARKETPLACE_JSON" | extract_address)"
-  MARKETPLACE_TX="$(printf '%s' "$MARKETPLACE_JSON" | extract_tx_hash)"
+  deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiMarketplace.sol:MochiMarketplace --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS" "$EDITIONS_ADDRESS" "$MOCK_USDC_ADDRESS"
+  MARKETPLACE_JSON="$DEPLOY_RESULT_JSON"
+  MARKETPLACE_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+  MARKETPLACE_TX="$DEPLOY_RESULT_TX"
 
-  SWAP_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiSwap.sol:MochiSwap --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS")"
-  SWAP_ADDRESS="$(printf '%s' "$SWAP_JSON" | extract_address)"
-  SWAP_TX="$(printf '%s' "$SWAP_JSON" | extract_tx_hash)"
+  deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiSwap.sol:MochiSwap --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS"
+  SWAP_JSON="$DEPLOY_RESULT_JSON"
+  SWAP_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+  SWAP_TX="$DEPLOY_RESULT_TX"
 
-  COMMISSION_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiCommission.sol:MochiCommission --constructor-args "$DEPLOYER_ADDRESS" "$MOCK_USDC_ADDRESS")"
-  COMMISSION_ADDRESS="$(printf '%s' "$COMMISSION_JSON" | extract_address)"
-  COMMISSION_TX="$(printf '%s' "$COMMISSION_JSON" | extract_tx_hash)"
+  deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiCommission.sol:MochiCommission --constructor-args "$DEPLOYER_ADDRESS" "$MOCK_USDC_ADDRESS"
+  COMMISSION_JSON="$DEPLOY_RESULT_JSON"
+  COMMISSION_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+  COMMISSION_TX="$DEPLOY_RESULT_TX"
 
-  ESCROW_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiEscrowVault.sol:MochiEscrowVault --constructor-args "$DEPLOYER_ADDRESS")"
-  ESCROW_ADDRESS="$(printf '%s' "$ESCROW_JSON" | extract_address)"
-  ESCROW_TX="$(printf '%s' "$ESCROW_JSON" | extract_tx_hash)"
+  deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiEscrowVault.sol:MochiEscrowVault --constructor-args "$DEPLOYER_ADDRESS"
+  ESCROW_JSON="$DEPLOY_RESULT_JSON"
+  ESCROW_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+  ESCROW_TX="$DEPLOY_RESULT_TX"
 
   for account in \
     0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 \
     0x70997970c51812dc3a010c7d01b50e0d17dc79c8 \
     0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc; do
-    cast send "$MOCK_USDC_ADDRESS" "mint(address,uint256)" "$account" 1000000000000 --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" >/dev/null
+    send_transaction "$RPC_URL" "$PRIVATE_KEY" "$MOCK_USDC_ADDRESS" "mint(address,uint256)" "$account" 1000000000000 >/dev/null
   done
 
   if [ "${LOCAL_SEED_SHOWCASE_DATA:-1}" = "1" ]; then
@@ -444,33 +462,40 @@ CURRENT_NONCE="$(cast nonce --block pending --rpc-url "$RPC_URL" "$DEPLOYER_ADDR
 
 (cd "$FOUNDRY_DIR" && forge build >/dev/null)
 
-NFT_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiNFT.sol:MochiNFT --constructor-args "$DEPLOYER_ADDRESS")"
-NFT_ADDRESS="$(printf '%s' "$NFT_JSON" | extract_address)"
-NFT_TX="$(printf '%s' "$NFT_JSON" | extract_tx_hash)"
+deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiNFT.sol:MochiNFT --constructor-args "$DEPLOYER_ADDRESS"
+NFT_JSON="$DEPLOY_RESULT_JSON"
+NFT_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+NFT_TX="$DEPLOY_RESULT_TX"
 
-EDITIONS_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiEditions.sol:MochiEditions --constructor-args "$DEPLOYER_ADDRESS")"
-EDITIONS_ADDRESS="$(printf '%s' "$EDITIONS_JSON" | extract_address)"
-EDITIONS_TX="$(printf '%s' "$EDITIONS_JSON" | extract_tx_hash)"
+deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiEditions.sol:MochiEditions --constructor-args "$DEPLOYER_ADDRESS"
+EDITIONS_JSON="$DEPLOY_RESULT_JSON"
+EDITIONS_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+EDITIONS_TX="$DEPLOY_RESULT_TX"
 
-AUCTION_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiAuction.sol:MochiAuction --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS" "$USDC_ADDRESS" "$ORACLE_ADDRESS")"
-AUCTION_ADDRESS="$(printf '%s' "$AUCTION_JSON" | extract_address)"
-AUCTION_TX="$(printf '%s' "$AUCTION_JSON" | extract_tx_hash)"
+deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiAuction.sol:MochiAuction --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS" "$USDC_ADDRESS" "$ORACLE_ADDRESS"
+AUCTION_JSON="$DEPLOY_RESULT_JSON"
+AUCTION_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+AUCTION_TX="$DEPLOY_RESULT_TX"
 
-MARKETPLACE_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiMarketplace.sol:MochiMarketplace --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS" "$EDITIONS_ADDRESS" "$USDC_ADDRESS")"
-MARKETPLACE_ADDRESS="$(printf '%s' "$MARKETPLACE_JSON" | extract_address)"
-MARKETPLACE_TX="$(printf '%s' "$MARKETPLACE_JSON" | extract_tx_hash)"
+deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiMarketplace.sol:MochiMarketplace --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS" "$EDITIONS_ADDRESS" "$USDC_ADDRESS"
+MARKETPLACE_JSON="$DEPLOY_RESULT_JSON"
+MARKETPLACE_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+MARKETPLACE_TX="$DEPLOY_RESULT_TX"
 
-SWAP_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiSwap.sol:MochiSwap --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS")"
-SWAP_ADDRESS="$(printf '%s' "$SWAP_JSON" | extract_address)"
-SWAP_TX="$(printf '%s' "$SWAP_JSON" | extract_tx_hash)"
+deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiSwap.sol:MochiSwap --constructor-args "$DEPLOYER_ADDRESS" "$NFT_ADDRESS"
+SWAP_JSON="$DEPLOY_RESULT_JSON"
+SWAP_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+SWAP_TX="$DEPLOY_RESULT_TX"
 
-COMMISSION_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiCommission.sol:MochiCommission --constructor-args "$DEPLOYER_ADDRESS" "$USDC_ADDRESS")"
-COMMISSION_ADDRESS="$(printf '%s' "$COMMISSION_JSON" | extract_address)"
-COMMISSION_TX="$(printf '%s' "$COMMISSION_JSON" | extract_tx_hash)"
+deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiCommission.sol:MochiCommission --constructor-args "$DEPLOYER_ADDRESS" "$USDC_ADDRESS"
+COMMISSION_JSON="$DEPLOY_RESULT_JSON"
+COMMISSION_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+COMMISSION_TX="$DEPLOY_RESULT_TX"
 
-ESCROW_JSON="$(deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiEscrowVault.sol:MochiEscrowVault --constructor-args "$DEPLOYER_ADDRESS")"
-ESCROW_ADDRESS="$(printf '%s' "$ESCROW_JSON" | extract_address)"
-ESCROW_TX="$(printf '%s' "$ESCROW_JSON" | extract_tx_hash)"
+deploy_contract "$RPC_URL" "$PRIVATE_KEY" src/MochiEscrowVault.sol:MochiEscrowVault --constructor-args "$DEPLOYER_ADDRESS"
+ESCROW_JSON="$DEPLOY_RESULT_JSON"
+ESCROW_ADDRESS="$DEPLOY_RESULT_ADDRESS"
+ESCROW_TX="$DEPLOY_RESULT_TX"
 
 if [ "$NETWORK" = "fuji" ] && [ "${FUJI_SEED_SAMPLE_DATA:-1}" = "1" ]; then
   seed_showcase_data "$RPC_URL" "$PRIVATE_KEY" "$NFT_ADDRESS" "$EDITIONS_ADDRESS" "$AUCTION_ADDRESS" "$MARKETPLACE_ADDRESS" "$SWAP_ADDRESS"

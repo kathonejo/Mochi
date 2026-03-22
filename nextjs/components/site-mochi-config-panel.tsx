@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import type { IconType } from "react-icons";
 import { HiChatBubbleLeftRight, HiCpuChip, HiSpeakerWave, HiSwatch, HiWrenchScrewdriver } from "react-icons/hi2";
 import { IoHeart } from "react-icons/io5";
@@ -1806,9 +1805,11 @@ export function SoundFields({ compact = false }: { compact?: boolean } = {}) {
 export function SiteMochiCompactConfigWindow({
   activeTab,
   fillHeight = true,
+  onOpenMarketplace,
 }: {
   activeTab: ConfigPanelTab;
   fillHeight?: boolean;
+  onOpenMarketplace?: () => void;
 }) {
   const { isSpanish } = useLanguage();
   const { theme, setTheme } = useTheme();
@@ -1880,12 +1881,21 @@ export function SiteMochiCompactConfigWindow({
         {activeTab === "mascot" ? (
           <div className="grid gap-4">
             <div className="flex justify-end">
-              <Link
-                href="/marketplace"
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenMarketplace) {
+                    onOpenMarketplace();
+                    return;
+                  }
+                  if (typeof window !== "undefined") {
+                    window.location.href = "/marketplace";
+                  }
+                }}
                 className="inline-flex items-center rounded-xl border border-border bg-background/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-foreground hover:bg-background/80"
               >
                 {isSpanish ? "Conseguir nuevas apariencias" : "Get new skins"}
-              </Link>
+              </button>
             </div>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
               {(catalog?.characters ?? []).map((character) => (
@@ -1954,7 +1964,13 @@ export function SiteMochiCompactConfigWindow({
   );
 }
 
-export function SiteMochiConfigPanel({ inline = false }: { inline?: boolean } = {}) {
+export function SiteMochiConfigPanel({
+  inline = false,
+  onOpenMarketplace,
+}: {
+  inline?: boolean;
+  onOpenMarketplace?: () => void;
+} = {}) {
   const { isSpanish } = useLanguage();
   const [activeTab, setActiveTab] = useState<ConfigPanelTab>("soul");
   const {
@@ -2044,7 +2060,7 @@ export function SiteMochiConfigPanel({ inline = false }: { inline?: boolean } = 
               </div>
 
               <div className="min-h-0 overflow-hidden">
-                <SiteMochiCompactConfigWindow activeTab={activeTab} />
+                <SiteMochiCompactConfigWindow activeTab={activeTab} onOpenMarketplace={onOpenMarketplace} />
               </div>
             </div>
           </div>

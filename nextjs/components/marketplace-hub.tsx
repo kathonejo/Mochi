@@ -791,19 +791,15 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
 
   return (
     <div
-      className={`site-window-skin mx-auto flex w-full ${isWindowVariant ? "max-w-none" : "max-w-7xl"} flex-col gap-4 px-4 pb-6 ${
+      className={`site-window-skin flex w-full flex-col gap-4 pb-6 ${
         isSettingsOnlyMode || isCreatorOnlyMode ? "pt-4" : topPaddingClass
-      } md:px-6 lg:px-8`}
+      }`}
     >
       {!isSettingsOnlyMode ? (
         <>
           {/* Tab strip — only in marketplace mode */}
           {isMarketplaceOnlyMode ? (
-            <div
-              className={`site-window-toolbar top-0 z-20 backdrop-blur-xl ${
-                isWindowVariant ? "sticky -mx-4 -mt-1 mb-2 px-4 py-2 md:-mx-6 md:px-6 lg:px-8" : "sticky left-0 right-0 mb-3 px-4 py-2 md:px-6 lg:px-8"
-              }`}
-            >
+            <div className="px-4 pb-0 pt-2">
               <div className="flex flex-col gap-3">
                 <div className="grid flex-1 grid-cols-3 gap-2">
                   <button
@@ -877,7 +873,7 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
 
           {/* Sell / Swap tab */}
           {isMarketplaceOnlyMode && marketplaceSellTab === "selling" ? (
-            <section className="site-window-surface config-contrast-panel rounded-3xl border border-border bg-white/10 p-4 md:p-6">
+            <div className="px-4">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
                   <Tag className="h-5 w-5 text-blue-300" />
@@ -935,12 +931,12 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
                   {studioError}
                 </div>
               ) : null}
-            </section>
+            </div>
           ) : null}
 
           {/* Creators tab */}
           {(isMarketplaceOnlyMode && marketplaceSellTab === "creators") || isCreatorOnlyMode ? (
-            <section className="site-window-surface config-contrast-panel rounded-3xl border border-border bg-white/10 p-4 md:p-6">
+            <div className="px-4">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
                   <ArrowLeftRight className="h-5 w-5 text-fuchsia-300" />
@@ -1074,7 +1070,7 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
                   {studioError}
                 </div>
               ) : null}
-            </section>
+            </div>
           ) : null}
         </>
       ) : null}

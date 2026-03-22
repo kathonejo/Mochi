@@ -13,7 +13,7 @@ import {
   timeLeftLabel,
   walletShort,
 } from "@/components/marketplace-hub-shared";
-import { ArrowUpRight, Gavel, ImageIcon, Loader2, ShoppingCart, UserRound } from "lucide-react";
+import { ArrowUpRight, Gavel, ImageIcon, Loader2, UserRound } from "lucide-react";
 
 type MarketplaceHubMarketplaceTabProps = {
   t: HubTranslateFn;
@@ -65,19 +65,7 @@ export function MarketplaceHubMarketplaceTab({
   publicKey,
 }: MarketplaceHubMarketplaceTabProps) {
   return (
-    <section className="site-window-surface config-contrast-panel rounded-3xl border border-border bg-white/10 p-4 md:p-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
-            <ShoppingCart className="h-5 w-5 text-emerald-300" />
-            {t("Marketplace", "Marketplace")}
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {t("Public listings and auctions.", "Publicaciones y subastas publicas.")}
-          </p>
-        </div>
-      </div>
-
+    <div className="px-4">
       <div className="grid gap-3 md:grid-cols-4">
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           <span>{t("Search", "Buscar")}</span>
@@ -451,6 +439,6 @@ export function MarketplaceHubMarketplaceTab({
           )}
         </div>
       ) : null}
-    </section>
+    </div>
   );
 }

@@ -444,6 +444,8 @@ launch_full_experience() {
   fi
 
   if [ "$network" = "local" ]; then
+    ui_echo "==> Ensuring local chain is already running..."
+    "$ROOT_DIR/scripts/chain.sh" start >/dev/null
     ui_echo "==> Launching chain tab..."
     if open_in_new_terminal "chain" "pnpm chain"; then
       launched_chain=1
