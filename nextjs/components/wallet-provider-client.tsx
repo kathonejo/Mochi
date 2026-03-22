@@ -30,19 +30,22 @@ import type { SmartAccountHandle } from "@/lib/smart-account";
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID?.trim();
 const hasWalletConnectProjectId = Boolean(projectId);
-const walletGroups = [
-  {
-    groupName: "Avalanche",
-    wallets: [
-      coreWallet,
-      metaMaskWallet,
-      coinbaseWallet,
-      rabbyWallet,
-      walletConnectWallet,
-      injectedWallet,
-    ],
-  },
-];
+
+function buildWalletGroups() {
+  return [
+    {
+      groupName: "Avalanche",
+      wallets: [
+        coreWallet,
+        metaMaskWallet,
+        coinbaseWallet,
+        rabbyWallet,
+        walletConnectWallet,
+        injectedWallet,
+      ],
+    },
+  ];
+}
 
 // ---------------------------------------------------------------------------
 // Inner provider — handles both EOA (wagmi) and Smart Account sessions
@@ -234,7 +237,7 @@ export function WalletProviderClient({ children }: { children: React.ReactNode }
           appName: "Mochi",
           projectId: projectId ?? "",
           chains: [ACTIVE_CHAIN],
-          wallets: walletGroups,
+          wallets: buildWalletGroups(),
           ssr: false,
           transports: {
             [ACTIVE_CHAIN.id]: http(RPC_URL),
@@ -242,7 +245,7 @@ export function WalletProviderClient({ children }: { children: React.ReactNode }
         })
       : createConfig({
           chains: [ACTIVE_CHAIN],
-          connectors: [metaMask(), injected()],
+          connectors: [metaMask({ enableAnalytics: false } as any), injected()],
           multiInjectedProviderDiscovery: true,
           ssr: false,
           transports: {

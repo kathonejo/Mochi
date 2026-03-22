@@ -38,7 +38,11 @@ contract MochiNFT is ERC721URIStorage, Ownable {
         return _mintInternal(to, tokenUri, to, TokenKind.Finished, false);
     }
 
-    function mintCommissionEgg(address to, address creator, string calldata tokenUri) external onlyOwner returns (uint256) {
+    function mintCommissionEgg(address to, address creator, string calldata tokenUri)
+        external
+        onlyOwner
+        returns (uint256)
+    {
         return _mintInternal(to, tokenUri, creator, TokenKind.CommissionEgg, true);
     }
 

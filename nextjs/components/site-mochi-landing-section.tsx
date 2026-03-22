@@ -12,17 +12,7 @@ import {
 } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  BookText,
-  BookOpen,
-  CircleHelp,
-  Download,
-  Palette,
-  Settings2,
-  ShoppingBag,
-  Wand2,
-  type LucideIcon,
-} from "lucide-react";
+import { Zap } from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
 import { useSiteMochi } from "@/components/site-mochi-provider";
 import { useTheme, type Theme } from "@/components/theme-provider";
@@ -35,11 +25,13 @@ import {
 } from "@/components/site-mochi-config-panel";
 import { SITE_DESKTOP_OPEN_WINDOW_EVENT, type SiteDesktopWindowKey } from "@/lib/site-desktop-window";
 
+const ICONS8_DUSK = "https://img.icons8.com/dusk/96";
+
 type DesktopConfigShortcutProps = {
   shortcutKey: DesktopWindowKey;
   label: string;
   configKey?: ConfigPanelTab;
-  customIcon?: LucideIcon;
+  iconUrl?: string;
 };
 
 type DesktopWindowKey =
@@ -51,7 +43,8 @@ type DesktopWindowKey =
   | "creator"
   | "guide"
   | "help"
-  | "download";
+  | "download"
+  | "fuel";
 
 type StoredChatMessage = {
   role: "user" | "assistant";
@@ -110,6 +103,7 @@ const DESKTOP_SHORTCUT_KEYS: DesktopWindowKey[] = [
   "marketplace",
   "creator",
   "guide",
+  "fuel",
   "help",
   "download",
   "soul",
@@ -133,11 +127,13 @@ const SITE_MOCHI_CHAT_HISTORY_STORAGE_KEY = "site-mochi-chat-history-v1";
 const SITE_MOCHI_CHAT_HISTORY_UPDATED_EVENT = "site-mochi:chat-history-updated";
 const DESKTOP_DEFAULT_SHORTCUT_ROWS: DesktopWindowKey[][] = [
   ["personalize", "marketplace", "creator", "guide"],
-  ["help", "download", "soul", "config", "memories"],
+  ["soul", "memories"],
+  ["config", "fuel", "help", "download"],
 ];
 const MOBILE_SHORTCUT_ROWS: DesktopWindowKey[][] = [
   ["personalize", "marketplace", "creator", "guide"],
-  ["help", "download", "soul", "config", "memories"],
+  ["soul", "memories"],
+  ["config", "fuel", "help", "download"],
 ];
 
 function clampDesktopWindowPosition(
@@ -291,7 +287,7 @@ function DesktopConfigShortcut({
   shortcutKey,
   label,
   configKey,
-  customIcon: CustomIcon,
+  iconUrl,
   iconTheme,
   theme,
   characterKey,
@@ -311,8 +307,8 @@ function DesktopConfigShortcut({
   onDragStart?: (event: ReactDragEvent<HTMLButtonElement>) => void;
 }) {
   const isBlackPink = theme === "black-pink";
-  const shortcutToneClass = isBlackPink ? "text-[#ff78c8]" : "text-foreground";
   const shortcutLabelClass = isBlackPink ? "text-[#ff78c8]" : "text-foreground/85";
+  const shortcutToneClass = isBlackPink ? "text-[#ff78c8]" : "text-foreground";
   const shortcutGlowClass = isBlackPink ? "drop-shadow-[0_0_10px_rgba(255,120,200,0.35)]" : "drop-shadow-[3px_3px_0_rgba(24,18,37,0.18)]";
 
   return (
@@ -330,15 +326,21 @@ function DesktopConfigShortcut({
         draggable={false}
       >
         <div className={shortcutGlowClass}>
-          {configKey ? (
+          {iconUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={iconUrl}
+              alt={label}
+              className="h-11 w-11 object-contain lg:h-9 lg:w-9"
+              draggable={false}
+            />
+          ) : configKey ? (
             <DesktopConfigIcon
               tab={configKey}
               iconTheme={iconTheme}
               characterKey={characterKey}
               className={`h-12 w-12 object-contain lg:h-10 lg:w-10 ${shortcutToneClass}`}
             />
-          ) : CustomIcon ? (
-            <CustomIcon className={`h-11 w-11 lg:h-9 lg:w-9 ${shortcutToneClass}`} strokeWidth={1.8} />
           ) : null}
         </div>
       </span>
@@ -469,10 +471,10 @@ function DesktopMemoriesWindow({
 
   return (
     <section className="flex h-full max-h-full min-h-0 flex-col overflow-hidden rounded-3xl border border-border bg-card/72 text-foreground shadow-[0_22px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-      <div className="min-h-0 flex-1 overflow-hidden px-3 py-3">
+      <div className="mochi-themed-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-3 lg:overflow-hidden">
         {messages.length ? (
-          <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[210px_minmax(0,1fr)]">
-            <aside className="mochi-themed-scrollbar min-h-0 overflow-y-auto rounded-[1.75rem] border border-border bg-background/55 p-2">
+          <div className="grid gap-3 lg:h-full lg:min-h-0 lg:grid-cols-[210px_minmax(0,1fr)]">
+            <aside className="mochi-themed-scrollbar overflow-y-auto rounded-[1.75rem] border border-border bg-background/55 p-2 lg:min-h-0">
               <div className="mb-2 flex flex-col items-start gap-2 px-2 pt-1 lg:flex-row lg:items-center lg:justify-between">
                 <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   {isSpanish ? "Dias" : "Days"}
@@ -514,37 +516,35 @@ function DesktopMemoriesWindow({
               </div>
             </aside>
 
-            <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.75rem] border border-border bg-background/45">
+            <div className="flex flex-col overflow-hidden rounded-[1.75rem] border border-border bg-background/45 lg:h-full lg:min-h-0">
               {activeGroup ? (
-                <>
-                  <div className="mochi-themed-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-3 [scrollbar-gutter:stable]">
-                    <div className="grid gap-2">
-                      {activeGroup.entries.map((message, index) => (
-                        <article
-                          key={`${activeGroup.dateKey}-${message.role}-${index}`}
-                          className={`rounded-xl border px-3 py-2 text-sm ${
-                            message.role === "user"
-                              ? "border-border bg-background/75"
-                              : "border-[var(--brand-accent)]/30 bg-[var(--brand-accent)]/10"
-                          }`}
-                        >
-                          <div className="mb-1 flex items-center justify-between gap-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                            <span>{message.role === "user" ? (isSpanish ? "Vos" : "You") : "Mochi"}</span>
-                            <span>{formatMemoryTimeLabel(message.createdAt, isSpanish)}</span>
-                          </div>
-                          <div className="whitespace-pre-wrap break-words text-[13px] leading-5 text-foreground">
-                            {message.content}
-                          </div>
-                          {message.ctaHref ? (
-                            <a className="mt-2 inline-block text-xs underline underline-offset-2" href={message.ctaHref}>
-                              {message.ctaLabel ?? message.ctaHref}
-                            </a>
-                          ) : null}
-                        </article>
-                      ))}
-                    </div>
+                <div className="mochi-themed-scrollbar flex-1 overflow-y-auto px-3 py-3 [scrollbar-gutter:stable] lg:min-h-0">
+                  <div className="grid gap-2">
+                    {activeGroup.entries.map((message, index) => (
+                      <article
+                        key={`${activeGroup.dateKey}-${message.role}-${index}`}
+                        className={`rounded-xl border px-3 py-2 text-sm ${
+                          message.role === "user"
+                            ? "border-border bg-background/75"
+                            : "border-[var(--brand-accent)]/30 bg-[var(--brand-accent)]/10"
+                        }`}
+                      >
+                        <div className="mb-1 flex items-center justify-between gap-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          <span>{message.role === "user" ? (isSpanish ? "Vos" : "You") : "Mochi"}</span>
+                          <span>{formatMemoryTimeLabel(message.createdAt, isSpanish)}</span>
+                        </div>
+                        <div className="whitespace-pre-wrap break-words text-[13px] leading-5 text-foreground">
+                          {message.content}
+                        </div>
+                        {message.ctaHref ? (
+                          <a className="mt-2 inline-block text-xs underline underline-offset-2" href={message.ctaHref}>
+                            {message.ctaLabel ?? message.ctaHref}
+                          </a>
+                        ) : null}
+                      </article>
+                    ))}
                   </div>
-                </>
+                </div>
               ) : null}
             </div>
           </div>
@@ -604,8 +604,10 @@ function DesktopPersonalizeWindow({
 
 function DesktopConfigWindow({
   isSpanish,
+  onOpenFuel,
 }: {
   isSpanish: boolean;
+  onOpenFuel?: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<"chat" | "tools" | "onchain" | "sound">("chat");
   const tabs: Array<{ key: "chat" | "tools" | "onchain" | "sound"; label: string }> = [
@@ -637,9 +639,98 @@ function DesktopConfigWindow({
         })}
       </div>
       <div className="min-h-0 flex-1 overflow-hidden">
-        <SiteMochiCompactConfigWindow activeTab={activeTab} fillHeight />
+        <SiteMochiCompactConfigWindow activeTab={activeTab} fillHeight onOpenFuel={onOpenFuel} />
       </div>
     </section>
+  );
+}
+
+function DesktopFuelWindow({ isSpanish }: { isSpanish: boolean }) {
+  const t = (en: string, es: string) => (isSpanish ? es : en);
+  return (
+    <div className="flex h-full flex-col overflow-auto bg-card/72 text-foreground">
+      <div className="grid gap-4 p-6 sm:grid-cols-2">
+        {/* Hosting */}
+        <div className="flex flex-col rounded-2xl border border-border bg-white/[0.04] p-5">
+          <div className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Hosting
+          </div>
+          <div className="flex-1">
+            <div className="text-3xl font-bold text-foreground">$20</div>
+            <div className="mt-1 text-xs text-muted-foreground">USDC / {t("month", "mes")}</div>
+            <p className="mt-3 text-xs text-muted-foreground/80 leading-relaxed">
+              {t(
+                "Keeps your agent alive and reachable 24/7. Pay with AVAX or USDC.",
+                "Mantiene a tu agente activo y disponible 24/7. Pagá con AVAX o USDC.",
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled
+            className="mt-5 w-full cursor-not-allowed rounded-xl bg-amber-500 py-2.5 text-xs font-semibold text-black opacity-50"
+          >
+            {t("Coming soon", "Próximamente")}
+          </button>
+        </div>
+
+        {/* AI Credits */}
+        <div className="flex flex-col rounded-2xl border border-border bg-white/[0.04] p-5">
+          <div className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            AI Credits
+          </div>
+          <div className="flex-1">
+            <div className="mt-1 mb-3 grid grid-cols-3 gap-2">
+              {["$2", "$5", "$10"].map((amt) => (
+                <div
+                  key={amt}
+                  className="rounded-lg border border-border bg-white/5 py-2 text-center text-sm font-semibold text-foreground/40"
+                >
+                  {amt}
+                </div>
+              ))}
+              <div className="col-span-3 rounded-lg border border-dashed border-border bg-white/5 py-2 text-center text-xs text-muted-foreground/40">
+                {t("Custom", "Personalizado")}
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground/80">
+              {t("Prices in USDC. Pay with AVAX or USDC.", "Precios en USDC. Pagá con AVAX o USDC.")}
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled
+            className="mt-5 w-full cursor-not-allowed rounded-xl bg-amber-500 py-2.5 text-xs font-semibold text-black opacity-50"
+          >
+            {t("Coming soon", "Próximamente")}
+          </button>
+        </div>
+      </div>
+
+      {/* ERC-8004 explainer */}
+      <div className="mx-6 mb-6 rounded-2xl border border-white/8 bg-white/[0.025] p-5">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 shrink-0 rounded-lg border border-amber-400/20 bg-amber-400/10 p-1.5">
+            <Zap className="h-3.5 w-3.5 text-amber-400" strokeWidth={2} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-foreground">
+              {t("Agents that pay for themselves", "Agentes que se pagan solos")}
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              {t(
+                "ERC-8004 enables x402 micropayments — your agent autonomously pays its own hosting and AI bills. You fund it once to start. It takes care of the rest.",
+                "ERC-8004 habilita micropagos x402 — tu agente paga solo su hosting e IA. Vos lo fondeás una vez para arrancar. Él se encarga del resto.",
+              )}
+            </p>
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/8 px-3 py-1 text-[10px] font-semibold text-amber-300">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+              {t("In development", "En desarrollo")}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -697,26 +788,28 @@ export function SiteMochiLandingSection() {
   };
 
   const desktopShortcuts: DesktopConfigShortcutProps[] = [
-    { shortcutKey: "personalize", label: t("Appearance", "Apariencia"), customIcon: Palette },
-    { shortcutKey: "marketplace", label: t("Marketplace", "Marketplace"), customIcon: ShoppingBag },
-    { shortcutKey: "creator", label: t("Create", "Crear"), customIcon: Wand2 },
-    { shortcutKey: "guide", label: t("Guide", "Guía"), customIcon: BookOpen },
-    { shortcutKey: "help", label: t("Help", "Ayuda"), customIcon: CircleHelp },
-    { shortcutKey: "download", label: t("Download", "Descarga"), customIcon: Download },
-    { shortcutKey: "soul", configKey: "soul", label: "Soul" },
-    { shortcutKey: "config", label: t("Config", "Config"), customIcon: Settings2 },
-    { shortcutKey: "memories", label: t("Memories", "Memorias"), customIcon: BookText },
+    { shortcutKey: "personalize", label: t("Appearance", "Apariencia"), iconUrl: `${ICONS8_DUSK}/paint-palette.png` },
+    { shortcutKey: "marketplace", label: t("Marketplace", "Marketplace"), iconUrl: `${ICONS8_DUSK}/shopping-bag.png` },
+    { shortcutKey: "creator", label: t("Create", "Crear"), iconUrl: `${ICONS8_DUSK}/unicorn.png` },
+    { shortcutKey: "guide", label: t("Guide", "Guía"), iconUrl: `${ICONS8_DUSK}/book.png` },
+    { shortcutKey: "fuel", label: t("Power", "Fondos"), iconUrl: `${ICONS8_DUSK}/electricity.png` },
+    { shortcutKey: "help", label: t("Help", "Ayuda"), iconUrl: `${ICONS8_DUSK}/help.png` },
+    { shortcutKey: "download", label: t("Download", "Descarga"), iconUrl: `${ICONS8_DUSK}/download.png` },
+    { shortcutKey: "soul", configKey: "soul", label: "Soul", iconUrl: `${ICONS8_DUSK}/crown.png` },
+    { shortcutKey: "config", label: t("Config", "Config"), iconUrl: `${ICONS8_DUSK}/settings.png` },
+    { shortcutKey: "memories", label: t("Memories", "Memorias"), iconUrl: `${ICONS8_DUSK}/camera.png` },
   ];
   const mobileShortcuts: DesktopConfigShortcutProps[] = [
-    { shortcutKey: "personalize", label: t("Appearance", "Apariencia"), customIcon: Palette },
-    { shortcutKey: "marketplace", label: t("Marketplace", "Marketplace"), customIcon: ShoppingBag },
-    { shortcutKey: "creator", label: t("Create", "Crear"), customIcon: Wand2 },
-    { shortcutKey: "guide", label: t("Guide", "Guía"), customIcon: BookOpen },
-    { shortcutKey: "help", label: t("Help", "Ayuda"), customIcon: CircleHelp },
-    { shortcutKey: "download", label: t("Download", "Descarga"), customIcon: Download },
-    { shortcutKey: "soul", configKey: "soul", label: "Soul" },
-    { shortcutKey: "config", label: t("Config", "Config"), customIcon: Settings2 },
-    { shortcutKey: "memories", label: t("Memories", "Memorias"), customIcon: BookText },
+    { shortcutKey: "personalize", label: t("Appearance", "Apariencia"), iconUrl: `${ICONS8_DUSK}/paint-palette.png` },
+    { shortcutKey: "marketplace", label: t("Marketplace", "Marketplace"), iconUrl: `${ICONS8_DUSK}/shopping-bag.png` },
+    { shortcutKey: "creator", label: t("Create", "Crear"), iconUrl: `${ICONS8_DUSK}/unicorn.png` },
+    { shortcutKey: "guide", label: t("Guide", "Guía"), iconUrl: `${ICONS8_DUSK}/book.png` },
+    { shortcutKey: "fuel", label: t("Power", "Fondos"), iconUrl: `${ICONS8_DUSK}/electricity.png` },
+    { shortcutKey: "help", label: t("Help", "Ayuda"), iconUrl: `${ICONS8_DUSK}/help.png` },
+    { shortcutKey: "download", label: t("Download", "Descarga"), iconUrl: `${ICONS8_DUSK}/download.png` },
+    { shortcutKey: "soul", configKey: "soul", label: "Soul", iconUrl: `${ICONS8_DUSK}/crown.png` },
+    { shortcutKey: "config", label: t("Config", "Config"), iconUrl: `${ICONS8_DUSK}/settings.png` },
+    { shortcutKey: "memories", label: t("Memories", "Memorias"), iconUrl: `${ICONS8_DUSK}/camera.png` },
   ];
   const mobileShortcutRows = MOBILE_SHORTCUT_ROWS;
   const shortcutByKey = Object.fromEntries(
@@ -954,6 +1047,10 @@ export function SiteMochiLandingSection() {
 
   const handleOpenMarketplaceWindow = () => {
     handleShortcutOpen("marketplace");
+  };
+
+  const handleOpenFuelWindow = () => {
+    handleShortcutOpen("fuel");
   };
 
   const handleShortcutPointerDown = (
@@ -1302,6 +1399,8 @@ export function SiteMochiLandingSection() {
                       ? t("Config", "Config")
                       : activeDesktopWindow === "memories"
                       ? t("Memories", "Memorias")
+                      : activeDesktopWindow === "fuel"
+                      ? t("Power", "Fondos")
                       : activeWindowMeta
                       ? isSpanish
                         ? activeWindowMeta.labelEs
@@ -1374,18 +1473,21 @@ export function SiteMochiLandingSection() {
                       className="h-full w-full border-0 bg-background"
                     />
                   ) : activeDesktopWindow === "config" ? (
-                    <DesktopConfigWindow isSpanish={isSpanish} />
+                    <DesktopConfigWindow isSpanish={isSpanish} onOpenFuel={handleOpenFuelWindow} />
                   ) : activeDesktopWindow === "memories" ? (
                     <DesktopMemoriesWindow
                       isSpanish={isSpanish}
                       messages={memoryMessages}
                       onClear={handleClearMemories}
                     />
+                  ) : activeDesktopWindow === "fuel" ? (
+                    <DesktopFuelWindow isSpanish={isSpanish} />
                   ) : compactConfigActiveTab ? (
                     <SiteMochiCompactConfigWindow
                       activeTab={compactConfigActiveTab}
                       fillHeight
                       onOpenMarketplace={handleOpenMarketplaceWindow}
+                      onOpenFuel={handleOpenFuelWindow}
                     />
                   ) : null}
                 </div>

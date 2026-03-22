@@ -13,8 +13,12 @@ contract MochiEscrowVault is Ownable {
     constructor(address initialOwner) Ownable(initialOwner) {}
 
     modifier onlyAuthorized() {
-        require(msg.sender == owner() || msg.sender == operator, "unauthorized");
+        _onlyAuthorized();
         _;
+    }
+
+    function _onlyAuthorized() internal view {
+        require(msg.sender == owner() || msg.sender == operator, "unauthorized");
     }
 
     function setOperator(address nextOperator) external onlyOwner {

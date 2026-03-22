@@ -76,7 +76,7 @@ export const PREVIEW_ANIMATION_SETS = {
     "climb-ceiling-frame-2.png",
     "grab-ceiling.png",
   ],
-  idle: [
+  sit: [
     "sit.png",
     "sit-look-up.png",
     "spin-head-frame-1.png",

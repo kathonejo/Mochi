@@ -19,14 +19,15 @@ export async function GET(request: NextRequest) {
       const ownedCharacters = await buildOwnedNftCharacterCatalog(wallet);
       const merged = new Map(characters.map((entry) => [entry.key, entry]));
       ownedCharacters.forEach((entry) => {
-        merged.set(entry.id, {
-          key: entry.id,
-          label: entry.name,
-          iconUrl:
-            entry.imageUrl ||
-            `/api/site-mochi/sprite/${encodeURIComponent(entry.id)}/icon.png`,
-          spritesBaseUri: entry.spritesBaseUri ?? null,
-        });
+      merged.set(entry.id, {
+        key: entry.id,
+        label: entry.name,
+        iconUrl:
+          entry.imageUrl ||
+          `/api/site-mochi/sprite/${encodeURIComponent(entry.id)}/icon.png`,
+        spritesBaseUri: entry.spritesBaseUri ?? null,
+        availableSpriteFiles: [],
+      });
       });
       characters = Array.from(merged.values()).sort((a, b) => a.label.localeCompare(b.label));
     }

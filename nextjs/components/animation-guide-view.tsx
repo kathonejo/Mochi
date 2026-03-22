@@ -51,12 +51,12 @@ const sections: GuideSection[] = [
     frames: [...PREVIEW_ANIMATION_SETS.wall, ...PREVIEW_ANIMATION_SETS.ceiling],
   },
   {
-    key: "idle",
-    title: "Idle expresivo",
-    description: "sit -> sit-look-up -> spin-head loop -> sit",
+    key: "sit",
+    title: "Sentado",
+    description: "sit",
     explanation:
-      "Este bloque hace que el personaje siga vivo cuando no está caminando. El spin-head necesita una progresión consistente para que el loop cierre limpio.",
-    frames: PREVIEW_ANIMATION_SETS.idle,
+      "Esta pose se usa cuando el personaje está sentado sin hacer otra acción. Es la base visual para el estado quieto en la web y en el creator.",
+    frames: PREVIEW_ANIMATION_SETS.sit,
   },
   {
     key: "using-computer",

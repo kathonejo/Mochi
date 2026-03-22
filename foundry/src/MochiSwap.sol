@@ -22,7 +22,7 @@ contract MochiSwap is Ownable, ReentrancyGuard {
 
     uint64 public constant MAX_SWAP_INTENTION_LEN = 280;
 
-    MochiNFT public immutable nft;
+    MochiNFT public immutable NFT;
 
     uint256 public nextSwapListingId;
     uint256 public nextSwapBidId;
@@ -30,30 +30,30 @@ contract MochiSwap is Ownable, ReentrancyGuard {
     mapping(uint256 => SwapListing) public swapListings;
     mapping(uint256 => SwapBid) public swapBids;
 
-    event SwapListingCreated(uint256 indexed listingId, address indexed creator, uint256 indexed offeredTokenId, string intention);
-    event SwapBidPlaced(uint256 indexed bidId, uint256 indexed listingId, address indexed bidder, uint256 bidderTokenId);
+    event SwapListingCreated(
+        uint256 indexed listingId, address indexed creator, uint256 indexed offeredTokenId, string intention
+    );
+    event SwapBidPlaced(
+        uint256 indexed bidId, uint256 indexed listingId, address indexed bidder, uint256 bidderTokenId
+    );
     event SwapBidAccepted(uint256 indexed listingId, uint256 indexed bidId, address indexed creator, address bidder);
     event SwapListingCancelled(uint256 indexed listingId, address indexed creator);
     event SwapBidCancelled(uint256 indexed bidId, uint256 indexed listingId, address indexed bidder);
 
     constructor(address initialOwner, address nftAddress) Ownable(initialOwner) {
-        nft = MochiNFT(nftAddress);
+        NFT = MochiNFT(nftAddress);
     }
 
     function createSwapListing(uint256 offeredTokenId, string calldata intention) external returns (uint256 listingId) {
         uint256 intentionLength = bytes(intention).length;
         require(intentionLength > 0 && intentionLength <= MAX_SWAP_INTENTION_LEN, "invalid intention");
-        require(nft.ownerOf(offeredTokenId) == msg.sender, "not owner");
+        require(NFT.ownerOf(offeredTokenId) == msg.sender, "not owner");
 
-        nft.transferFrom(msg.sender, address(this), offeredTokenId);
+        NFT.transferFrom(msg.sender, address(this), offeredTokenId);
 
         listingId = nextSwapListingId++;
-        swapListings[listingId] = SwapListing({
-            creator: msg.sender,
-            offeredTokenId: offeredTokenId,
-            intention: intention,
-            active: true
-        });
+        swapListings[listingId] =
+            SwapListing({creator: msg.sender, offeredTokenId: offeredTokenId, intention: intention, active: true});
 
         emit SwapListingCreated(listingId, msg.sender, offeredTokenId, intention);
     }
@@ -62,17 +62,13 @@ contract MochiSwap is Ownable, ReentrancyGuard {
         SwapListing memory listing = swapListings[listingId];
         require(listing.active, "swap inactive");
         require(listing.creator != msg.sender, "creator cannot bid");
-        require(nft.ownerOf(bidderTokenId) == msg.sender, "not owner");
+        require(NFT.ownerOf(bidderTokenId) == msg.sender, "not owner");
 
-        nft.transferFrom(msg.sender, address(this), bidderTokenId);
+        NFT.transferFrom(msg.sender, address(this), bidderTokenId);
 
         bidId = nextSwapBidId++;
-        swapBids[bidId] = SwapBid({
-            listingId: listingId,
-            bidder: msg.sender,
-            bidderTokenId: bidderTokenId,
-            active: true
-        });
+        swapBids[bidId] =
+            SwapBid({listingId: listingId, bidder: msg.sender, bidderTokenId: bidderTokenId, active: true});
 
         emit SwapBidPlaced(bidId, listingId, msg.sender, bidderTokenId);
     }
@@ -87,8 +83,8 @@ contract MochiSwap is Ownable, ReentrancyGuard {
         listing.active = false;
         bid.active = false;
 
-        nft.transferFrom(address(this), bid.bidder, listing.offeredTokenId);
-        nft.transferFrom(address(this), listing.creator, bid.bidderTokenId);
+        NFT.transferFrom(address(this), bid.bidder, listing.offeredTokenId);
+        NFT.transferFrom(address(this), listing.creator, bid.bidderTokenId);
 
         emit SwapBidAccepted(listingId, bidId, listing.creator, bid.bidder);
     }
@@ -99,7 +95,7 @@ contract MochiSwap is Ownable, ReentrancyGuard {
         require(listing.creator == msg.sender, "not creator");
 
         listing.active = false;
-        nft.transferFrom(address(this), msg.sender, listing.offeredTokenId);
+        NFT.transferFrom(address(this), msg.sender, listing.offeredTokenId);
 
         emit SwapListingCancelled(listingId, msg.sender);
     }
@@ -110,7 +106,7 @@ contract MochiSwap is Ownable, ReentrancyGuard {
         require(bid.bidder == msg.sender, "not bidder");
 
         bid.active = false;
-        nft.transferFrom(address(this), msg.sender, bid.bidderTokenId);
+        NFT.transferFrom(address(this), msg.sender, bid.bidderTokenId);
 
         emit SwapBidCancelled(bidId, bid.listingId, msg.sender);
     }

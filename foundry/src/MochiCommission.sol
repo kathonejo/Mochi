@@ -39,12 +39,12 @@ contract MochiCommission is Ownable, ReentrancyGuard {
     uint64 public constant MAX_INTENTION_LEN = 500;
     uint64 public constant MAX_REF_IMAGE_LEN = 512;
 
-    IERC20 public immutable usdc;
+    IERC20 public immutable USDC;
     uint256 public nextCommissionId;
     mapping(uint256 => CommissionRequest) public commissions;
 
     constructor(address initialOwner, address usdcAddress) Ownable(initialOwner) {
-        usdc = IERC20(usdcAddress);
+        USDC = IERC20(usdcAddress);
     }
 
     function createCommission(
@@ -63,7 +63,7 @@ contract MochiCommission is Ownable, ReentrancyGuard {
             require(msg.value == priceAvax, "incorrect avax");
         } else {
             require(msg.value == 0, "unexpected avax");
-            usdc.safeTransferFrom(msg.sender, address(this), priceUsdc);
+            USDC.safeTransferFrom(msg.sender, address(this), priceUsdc);
         }
 
         commissionId = nextCommissionId++;
@@ -106,7 +106,7 @@ contract MochiCommission is Ownable, ReentrancyGuard {
             (bool ok,) = payable(request.artist).call{value: request.priceAvax}("");
             require(ok, "avax payout failed");
         } else {
-            usdc.safeTransfer(request.artist, request.priceUsdc);
+            USDC.safeTransfer(request.artist, request.priceUsdc);
         }
     }
 
@@ -119,7 +119,7 @@ contract MochiCommission is Ownable, ReentrancyGuard {
             (bool ok,) = payable(request.buyer).call{value: request.priceAvax}("");
             require(ok, "avax refund failed");
         } else {
-            usdc.safeTransfer(request.buyer, request.priceUsdc);
+            USDC.safeTransfer(request.buyer, request.priceUsdc);
         }
     }
 

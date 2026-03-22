@@ -13,7 +13,7 @@ import {
   timeLeftLabel,
   walletShort,
 } from "@/components/marketplace-hub-shared";
-import { ArrowUpRight, Gavel, ImageIcon, Loader2, UserRound } from "lucide-react";
+import { ArrowUpRight, Gavel, ImageIcon, Loader2, RefreshCw, UserRound } from "lucide-react";
 
 type MarketplaceHubMarketplaceTabProps = {
   t: HubTranslateFn;
@@ -26,7 +26,7 @@ type MarketplaceHubMarketplaceTabProps = {
   feedSort: FeedSort;
   onFeedSortChange: (value: FeedSort) => void;
   feedError: string;
-  feedWarnings: string[];
+  onRetryFeed: () => void | Promise<void>;
   feedLoading: boolean;
   marketplaceGridItems: MarketplaceFeedItem[];
   liveAuctionItem: MarketplaceFeedItem | null;
@@ -51,7 +51,7 @@ export function MarketplaceHubMarketplaceTab({
   feedSort,
   onFeedSortChange,
   feedError,
-  feedWarnings,
+  onRetryFeed,
   feedLoading,
   marketplaceGridItems,
   liveAuctionItem,
@@ -116,21 +116,31 @@ export function MarketplaceHubMarketplaceTab({
       </div>
 
       {feedError ? (
-        <div className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-foreground">
-          {feedError}
-        </div>
-      ) : null}
-
-      {feedWarnings.length ? (
-        <div className="mt-4 space-y-2">
-          {feedWarnings.map((warning) => (
-            <div
-              key={warning}
-              className="rounded-xl border border-amber-400/20 bg-amber-500/10 p-3 text-xs text-foreground"
-            >
-              {warning}
+        <div className="mt-4 overflow-hidden rounded-3xl border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_48%),linear-gradient(135deg,rgba(11,15,20,0.9),rgba(19,24,33,0.88))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200/90">
+                {t("Marketplace update", "Actualización del marketplace")}
+              </p>
+              <h3 className="mt-2 text-lg font-semibold text-foreground">
+                {t("The feed is refreshing.", "El feed se está actualizando.")}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {t(
+                  "The marketplace will appear as soon as the data source responds. Your presentation view stays on-brand instead of showing a raw error.",
+                  "El marketplace aparecerá apenas responda la fuente de datos. La vista de presentación se mantiene prolija en lugar de mostrar un error crudo.",
+                )}
+              </p>
             </div>
-          ))}
+            <Button
+              type="button"
+              onClick={() => void onRetryFeed()}
+              className="self-start bg-foreground text-background hover:bg-foreground/90"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {t("Retry", "Reintentar")}
+            </Button>
+          </div>
         </div>
       ) : null}
 

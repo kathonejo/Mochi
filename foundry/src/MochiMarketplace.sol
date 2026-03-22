@@ -80,9 +80,9 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
     uint64 public constant MAX_COMMISSION_REVISION_REQUESTS = 3;
     uint64 public constant COMMISSION_AUTO_RELEASE_AFTER_DELIVERY_SECS = 7 days;
 
-    MochiNFT public immutable nft;
-    MochiEditions public immutable editions;
-    IERC20 public immutable usdc;
+    MochiNFT public immutable NFT;
+    MochiEditions public immutable EDITIONS;
+    IERC20 public immutable USDC;
     EscrowProvider public escrowProvider = EscrowProvider.Internal;
 
     uint256 public nextListingId;
@@ -95,16 +95,32 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
     mapping(address => uint256) public sellerActiveCommissionEggListing;
     mapping(address => uint256) public sellerOpenCommissionOrder;
 
-    event ListingCreated(uint256 indexed listingId, address indexed seller, uint256 indexed tokenId, bool commissionEgg);
-    event ListingPurchased(uint256 indexed listingId, address indexed buyer, uint256 indexed tokenId, Currency currency, bool commissionEgg);
-    event EditionListingCreated(uint256 indexed listingId, address indexed seller, uint256 indexed editionId, uint256 amount, Currency currency);
-    event EditionListingPurchased(uint256 indexed listingId, address indexed buyer, uint256 indexed editionId, Currency currency, uint256 remainingAmount);
-    event CommissionOrderCreated(uint256 indexed orderId, uint256 indexed listingId, address indexed buyer, uint256 tokenId);
+    event ListingCreated(
+        uint256 indexed listingId, address indexed seller, uint256 indexed tokenId, bool commissionEgg
+    );
+    event ListingPurchased(
+        uint256 indexed listingId, address indexed buyer, uint256 indexed tokenId, Currency currency, bool commissionEgg
+    );
+    event EditionListingCreated(
+        uint256 indexed listingId, address indexed seller, uint256 indexed editionId, uint256 amount, Currency currency
+    );
+    event EditionListingPurchased(
+        uint256 indexed listingId,
+        address indexed buyer,
+        uint256 indexed editionId,
+        Currency currency,
+        uint256 remainingAmount
+    );
+    event CommissionOrderCreated(
+        uint256 indexed orderId, uint256 indexed listingId, address indexed buyer, uint256 tokenId
+    );
 
-    constructor(address initialOwner, address nftAddress, address editionsAddress, address usdcAddress) Ownable(initialOwner) {
-        nft = MochiNFT(nftAddress);
-        editions = MochiEditions(editionsAddress);
-        usdc = IERC20(usdcAddress);
+    constructor(address initialOwner, address nftAddress, address editionsAddress, address usdcAddress)
+        Ownable(initialOwner)
+    {
+        NFT = MochiNFT(nftAddress);
+        EDITIONS = MochiEditions(editionsAddress);
+        USDC = IERC20(usdcAddress);
     }
 
     function configureInternalEscrow() external onlyOwner {
@@ -115,19 +131,25 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
         listingId = _createListing(tokenId, price, currency, 0, false);
     }
 
-    function listCommissionEgg(uint256 tokenId, uint256 price, Currency currency, uint64 commissionEtaDays) external returns (uint256 listingId) {
+    function listCommissionEgg(uint256 tokenId, uint256 price, Currency currency, uint64 commissionEtaDays)
+        external
+        returns (uint256 listingId)
+    {
         require(commissionEtaDays > 0 && commissionEtaDays <= MAX_COMMISSION_TURNAROUND_DAYS, "invalid eta");
         require(sellerOpenCommissionOrder[msg.sender] == 0, "seller has open order");
         listingId = _createListing(tokenId, price, currency, commissionEtaDays, true);
         sellerActiveCommissionEggListing[msg.sender] = listingId + 1;
     }
 
-    function listEditionForSale(uint256 editionId, uint256 amount, uint256 price, Currency currency) external returns (uint256 listingId) {
+    function listEditionForSale(uint256 editionId, uint256 amount, uint256 price, Currency currency)
+        external
+        returns (uint256 listingId)
+    {
         require(price > 0, "price=0");
         require(amount > 0, "amount=0");
-        require(editions.balanceOf(msg.sender, editionId) >= amount, "insufficient balance");
+        require(EDITIONS.balanceOf(msg.sender, editionId) >= amount, "insufficient balance");
 
-        IERC1155(address(editions)).safeTransferFrom(msg.sender, address(this), editionId, amount, "");
+        IERC1155(address(EDITIONS)).safeTransferFrom(msg.sender, address(this), editionId, amount, "");
 
         listingId = nextEditionListingId++;
         editionListings[listingId] = EditionListingInfo({
@@ -150,20 +172,27 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
         require(listing.active, "listing inactive");
         require(!listing.isCommissionEgg, "use commission buy");
         require(listing.currency == Currency.Usdc, "currency mismatch");
-        usdc.safeTransferFrom(msg.sender, address(this), listing.price);
+        USDC.safeTransferFrom(msg.sender, address(this), listing.price);
         _buy(listingId, Currency.Usdc, listing.price, "", "");
     }
 
-    function buyCommissionAvax(uint256 listingId, string calldata intention, string calldata referenceImageUrl) external payable nonReentrant {
+    function buyCommissionAvax(uint256 listingId, string calldata intention, string calldata referenceImageUrl)
+        external
+        payable
+        nonReentrant
+    {
         _buy(listingId, Currency.Avax, msg.value, intention, referenceImageUrl);
     }
 
-    function buyCommissionUsdc(uint256 listingId, string calldata intention, string calldata referenceImageUrl) external nonReentrant {
+    function buyCommissionUsdc(uint256 listingId, string calldata intention, string calldata referenceImageUrl)
+        external
+        nonReentrant
+    {
         ListingInfo memory listing = listings[listingId];
         require(listing.active, "listing inactive");
         require(listing.isCommissionEgg, "listing not commission");
         require(listing.currency == Currency.Usdc, "currency mismatch");
-        usdc.safeTransferFrom(msg.sender, address(this), listing.price);
+        USDC.safeTransferFrom(msg.sender, address(this), listing.price);
         _buy(listingId, Currency.Usdc, listing.price, intention, referenceImageUrl);
     }
 
@@ -175,7 +204,7 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
         EditionListingInfo memory listing = editionListings[listingId];
         require(listing.active, "listing inactive");
         require(listing.currency == Currency.Usdc, "currency mismatch");
-        usdc.safeTransferFrom(msg.sender, address(this), listing.price);
+        USDC.safeTransferFrom(msg.sender, address(this), listing.price);
         _buyEdition(listingId, Currency.Usdc, listing.price);
     }
 
@@ -187,7 +216,7 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
         if (listing.isCommissionEgg) {
             sellerActiveCommissionEggListing[msg.sender] = 0;
         }
-        nft.transferFrom(address(this), msg.sender, listing.tokenId);
+        NFT.transferFrom(address(this), msg.sender, listing.tokenId);
     }
 
     function cancelEditionListing(uint256 listingId) external nonReentrant {
@@ -198,7 +227,7 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
         uint256 remainingAmount = listing.remainingAmount;
         listing.active = false;
         listing.remainingAmount = 0;
-        IERC1155(address(editions)).safeTransferFrom(address(this), msg.sender, listing.editionId, remainingAmount, "");
+        IERC1155(address(EDITIONS)).safeTransferFrom(address(this), msg.sender, listing.editionId, remainingAmount, "");
     }
 
     function markCommissionDelivered(uint256 orderId) external {
@@ -207,7 +236,7 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
         require(order.status == CommissionOrderStatus.Accepted, "bad status");
         order.status = CommissionOrderStatus.Delivered;
         order.deliveredAt = uint64(block.timestamp);
-        order.lastDeliveredMetadataUri = nft.tokenURI(order.tokenId);
+        order.lastDeliveredMetadataUri = NFT.tokenURI(order.tokenId);
     }
 
     function approveCommissionDelivery(uint256 orderId) external nonReentrant {
@@ -220,7 +249,9 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
         sellerOpenCommissionOrder[order.seller] = 0;
     }
 
-    function requestCommissionRevision(uint256 orderId, string calldata intention, string calldata referenceImageUrl) external {
+    function requestCommissionRevision(uint256 orderId, string calldata intention, string calldata referenceImageUrl)
+        external
+    {
         CommissionOrder storage order = commissionOrders[orderId];
         require(order.buyer == msg.sender, "not buyer");
         require(order.status == CommissionOrderStatus.Delivered, "bad status");
@@ -247,7 +278,10 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
     function refundCommissionOrder(uint256 orderId) external nonReentrant {
         CommissionOrder storage order = commissionOrders[orderId];
         require(msg.sender == owner() || msg.sender == order.buyer, "not authorized");
-        require(order.status == CommissionOrderStatus.Accepted || order.status == CommissionOrderStatus.Delivered, "bad status");
+        require(
+            order.status == CommissionOrderStatus.Accepted || order.status == CommissionOrderStatus.Delivered,
+            "bad status"
+        );
         _refundEscrow(order);
         order.status = CommissionOrderStatus.Refunded;
         order.resolvedAt = uint64(block.timestamp);
@@ -278,10 +312,16 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
         return commissionOrders[orderId];
     }
 
-    function _createListing(uint256 tokenId, uint256 price, Currency currency, uint64 commissionEtaDays, bool isCommissionEgg) internal returns (uint256 listingId) {
+    function _createListing(
+        uint256 tokenId,
+        uint256 price,
+        Currency currency,
+        uint64 commissionEtaDays,
+        bool isCommissionEgg
+    ) internal returns (uint256 listingId) {
         require(price > 0, "price=0");
-        require(nft.ownerOf(tokenId) == msg.sender, "not owner");
-        nft.transferFrom(msg.sender, address(this), tokenId);
+        require(NFT.ownerOf(tokenId) == msg.sender, "not owner");
+        NFT.transferFrom(msg.sender, address(this), tokenId);
 
         listingId = nextListingId++;
         listings[listingId] = ListingInfo({
@@ -296,7 +336,13 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
         emit ListingCreated(listingId, msg.sender, tokenId, isCommissionEgg);
     }
 
-    function _buy(uint256 listingId, Currency paymentCurrency, uint256 amount, string memory intention, string memory referenceImageUrl) internal {
+    function _buy(
+        uint256 listingId,
+        Currency paymentCurrency,
+        uint256 amount,
+        string memory intention,
+        string memory referenceImageUrl
+    ) internal {
         ListingInfo storage listing = listings[listingId];
         require(listing.active, "listing inactive");
         require(listing.currency == paymentCurrency, "currency mismatch");
@@ -310,7 +356,7 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
             _payout(listing.seller, paymentCurrency, amount);
         }
 
-        nft.transferFrom(address(this), msg.sender, listing.tokenId);
+        NFT.transferFrom(address(this), msg.sender, listing.tokenId);
         emit ListingPurchased(listingId, msg.sender, listing.tokenId, paymentCurrency, listing.isCommissionEgg);
     }
 
@@ -327,7 +373,7 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
         }
 
         _payout(listing.seller, paymentCurrency, amount);
-        IERC1155(address(editions)).safeTransferFrom(address(this), msg.sender, listing.editionId, 1, "");
+        IERC1155(address(EDITIONS)).safeTransferFrom(address(this), msg.sender, listing.editionId, 1, "");
         emit EditionListingPurchased(listingId, msg.sender, listing.editionId, paymentCurrency, listing.remainingAmount);
     }
 
@@ -365,7 +411,7 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
             latestRevisionRefUrl: "",
             revisionRequestCount: 0,
             maxRevisionRequests: MAX_COMMISSION_REVISION_REQUESTS,
-            metadataUriAtPurchase: nft.tokenURI(listing.tokenId),
+            metadataUriAtPurchase: NFT.tokenURI(listing.tokenId),
             lastDeliveredMetadataUri: "",
             status: CommissionOrderStatus.Accepted,
             createdAt: uint64(block.timestamp),
@@ -395,7 +441,7 @@ contract MochiMarketplace is Ownable, ReentrancyGuard, ERC1155Holder {
             (bool ok,) = payable(to).call{value: amount}("");
             require(ok, "avax payout failed");
         } else {
-            usdc.safeTransfer(to, amount);
+            USDC.safeTransfer(to, amount);
         }
     }
 

@@ -2,6 +2,7 @@
 
 import {
   Fragment,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -28,9 +29,17 @@ import {
   SITE_MOCHI_CHAT_RESIZE_EDGE_PX,
   SITE_MOCHI_CHAT_WIDTH_MAP,
 } from "@/lib/site-mochi-chat-ui";
+import { PREVIEW_ANIMATION_SETS } from "@/lib/mochi-sprite-spec";
 
 type Role = "user" | "assistant";
-type Msg = { role: Role; content: string; ctaHref?: string; ctaLabel?: string; createdAt?: string };
+type Msg = {
+  role: Role;
+  content: string;
+  ctaHref?: string;
+  ctaLabel?: string;
+  createdAt?: string;
+  streaming?: boolean;
+};
 type VoiceStatusTone = "info" | "error";
 type BubbleResizeCursor = "" | "w-resize" | "e-resize" | "n-resize" | "nw-resize" | "ne-resize";
 
@@ -152,6 +161,25 @@ function getSpeechLocale(language: string) {
   return language === "es" ? "es-ES" : "en-US";
 }
 
+function parseSseEventBlock(block: string) {
+  const lines = block.split(/\r?\n/);
+  let event = "message";
+  const dataParts: string[] = [];
+
+  for (const line of lines) {
+    if (!line || line.startsWith(":")) continue;
+    if (line.startsWith("event:")) {
+      event = line.slice(6).trim() || "message";
+      continue;
+    }
+    if (line.startsWith("data:")) {
+      dataParts.push(line.slice(5).replace(/^\s/, ""));
+    }
+  }
+
+  return { event, data: dataParts.join("\n").trim() };
+}
+
 async function fetchWebSearchToolContext(args: { query: string; braveApiKey: string }) {
   const query = args.query.trim();
   const apiKey = args.braveApiKey.trim();
@@ -171,6 +199,126 @@ async function fetchWebSearchToolContext(args: { query: string; braveApiKey: str
     throw new Error(errorCode);
   }
   return typeof json?.context === "string" ? json.context.trim() : "";
+}
+
+async function streamMochiChatReply(args: {
+  body: Record<string, unknown>;
+  onDelta: (delta: string) => void;
+}) {
+  const response = await fetch("/api/mochi-chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(args.body),
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  if (!response.ok || !contentType.includes("text/event-stream")) {
+    const json = await response.json().catch(() => null);
+    const reply = typeof json?.reply === "string" ? json.reply.trim() : "";
+    if (!response.ok || !reply) {
+      const errorCode = typeof json?.error === "string" ? json.error : "bad-response";
+      const errorStatus =
+        typeof json?.status === "number" || typeof json?.status === "string"
+          ? String(json.status).trim()
+          : "";
+      const errorDetails = typeof json?.details === "string" ? json.details.trim().slice(0, 240) : "";
+      if (errorCode === "OpenRouter request failed" && errorDetails) {
+        throw new Error(`OPENROUTER_DETAIL:${errorDetails}`);
+      }
+      if (errorCode === "OpenRouter request failed" && errorStatus) {
+        throw new Error(`OPENROUTER_DETAIL:HTTP ${errorStatus}`);
+      }
+      throw new Error(errorCode);
+    }
+    return reply;
+  }
+
+  if (!response.body) {
+    throw new Error("STREAM_UNAVAILABLE");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let reply = "";
+
+  const processBlock = (block: string) => {
+    const { event, data } = parseSseEventBlock(block);
+    if (!data) return false;
+
+    if (event === "token") {
+      let payload: any = null;
+      try {
+        payload = JSON.parse(data);
+      } catch {
+        return false;
+      }
+      const delta = typeof payload?.text === "string" ? payload.text : "";
+      if (delta) {
+        reply += delta;
+        args.onDelta(delta);
+      }
+      return false;
+    }
+
+    if (event === "done") {
+      let payload: any = null;
+      try {
+        payload = JSON.parse(data);
+      } catch {
+        return false;
+      }
+      if (typeof payload?.reply === "string" && payload.reply.trim()) {
+        reply = payload.reply.trim();
+      }
+      return true;
+    }
+
+    if (event === "error") {
+      let payload: any = null;
+      try {
+        payload = JSON.parse(data);
+      } catch {
+        throw new Error("STREAM_ERROR");
+      }
+      const errorCode = typeof payload?.error === "string" ? payload.error : "STREAM_ERROR";
+      const errorStatus =
+        typeof payload?.status === "number" || typeof payload?.status === "string"
+          ? String(payload.status).trim()
+          : "";
+      const errorDetails = typeof payload?.details === "string" ? payload.details.trim().slice(0, 240) : "";
+      if (errorCode === "OpenRouter request failed" && errorDetails) {
+        throw new Error(`OPENROUTER_DETAIL:${errorDetails}`);
+      }
+      if (errorCode === "OpenRouter request failed" && errorStatus) {
+        throw new Error(`OPENROUTER_DETAIL:HTTP ${errorStatus}`);
+      }
+      throw new Error(errorCode);
+    }
+
+    return false;
+  };
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+
+    let boundary = buffer.indexOf("\n\n");
+    while (boundary !== -1) {
+      const block = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 2);
+      const finished = processBlock(block);
+      if (finished) return reply.trim();
+      boundary = buffer.indexOf("\n\n");
+    }
+  }
+
+  if (buffer.trim()) {
+    processBlock(buffer.replace(/\r\n/g, "\n"));
+  }
+
+  return reply.trim();
 }
 
 const SPRITE_SIZE = 72;
@@ -197,6 +345,44 @@ const MAX_STORED_CHAT_MESSAGES = 40;
 type Edge = "bottom" | "right" | "top" | "left";
 type MascotState = "falling" | "floor-walking" | "wall-climbing" | "ceiling-walking";
 type WallSide = "left" | "right";
+
+const NEJO_HACKATHON_KEY = "nejo";
+
+class NejoHackathonMotionPolicy {
+  private readonly active: boolean;
+  private readonly sprites: Set<string>;
+
+  constructor(characterKey: string, availableSpriteFiles?: string[] | null) {
+    this.active =
+      String(characterKey || "").trim().toLowerCase() === NEJO_HACKATHON_KEY;
+    this.sprites = new Set(
+      (availableSpriteFiles || [])
+        .map((file) => file.trim().toLowerCase())
+        .filter((file) => Boolean(file)),
+    );
+  }
+
+  // Temporary policy for the Nejo hackathon mochi until we finish the sprite set.
+  resolveMovementState(state: MascotState): MascotState {
+    if (!this.active) return state;
+    if (state === "wall-climbing" || state === "ceiling-walking") {
+      return "floor-walking";
+    }
+    return state;
+  }
+
+  hasSprite(fileName: string): boolean {
+    if (!this.active) return true;
+    const normalized = String(fileName || "").trim().toLowerCase();
+    return normalized.length > 0 && this.sprites.has(normalized);
+  }
+
+  getAnimationFiles(files: readonly string[], fallback: readonly string[]): string[] {
+    if (!this.active) return Array.from(files);
+    const filtered = files.filter((file) => this.hasSprite(file));
+    return filtered.length ? filtered : Array.from(fallback);
+  }
+}
 
 type DragState = {
   pointerId: number;
@@ -312,10 +498,6 @@ export function SiteMochiMascot() {
     canUseCurrentProvider,
     updateConfig,
   } = useSiteMochi();
-
-  if (pathname !== "/") {
-    return null;
-  }
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const actorRef = useRef<HTMLDivElement | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
@@ -364,12 +546,13 @@ export function SiteMochiMascot() {
     if (typeof window === "undefined" || !loadedStoredMessagesRef.current) return;
 
     try {
-      if (!messages.length) {
+      const persistedMessages = messages.filter((message) => !message.streaming);
+      if (!persistedMessages.length) {
         window.localStorage.removeItem(SITE_MOCHI_CHAT_HISTORY_STORAGE_KEY);
       } else {
         window.localStorage.setItem(
           SITE_MOCHI_CHAT_HISTORY_STORAGE_KEY,
-          JSON.stringify(messages.slice(-MAX_STORED_CHAT_MESSAGES)),
+          JSON.stringify(persistedMessages.slice(-MAX_STORED_CHAT_MESSAGES)),
         );
       }
       window.dispatchEvent(new Event(SITE_MOCHI_CHAT_HISTORY_UPDATED_EVENT));
@@ -414,6 +597,8 @@ export function SiteMochiMascot() {
   const isDraggingRef = useRef(false);
   const blockClickRef = useRef(false);
   const jumpTimeoutRef = useRef<number | undefined>(undefined);
+  const jumpBurstUntilRef = useRef<number>(0);
+  const dragFrameIndexRef = useRef(0);
   const isInitializedRef = useRef(false);
   const bubbleRectRef = useRef({ left: 8, top: 8 });
   const bubbleResizeStateRef = useRef<BubbleResizeState | null>(null);
@@ -465,36 +650,47 @@ export function SiteMochiMascot() {
   }, []);
 
   const selectedCharacter = catalog?.characters.find((entry) => entry.key === config.character);
-
-  const frames = useMemo(
-    () => ({
-      stand: buildSpriteSrc(config.character, "stand-neutral.png", selectedCharacter?.spritesBaseUri),
-      walk: [
-        buildSpriteSrc(config.character, "walk-step-left.png", selectedCharacter?.spritesBaseUri),
-        buildSpriteSrc(config.character, "stand-neutral.png", selectedCharacter?.spritesBaseUri),
-        buildSpriteSrc(config.character, "walk-step-right.png", selectedCharacter?.spritesBaseUri),
-        buildSpriteSrc(config.character, "stand-neutral.png", selectedCharacter?.spritesBaseUri),
-      ],
-      wallClimb: [
-        buildSpriteSrc(config.character, "grab-wall.png", selectedCharacter?.spritesBaseUri),
-        buildSpriteSrc(config.character, "climb-wall-frame-1.png", selectedCharacter?.spritesBaseUri),
-        buildSpriteSrc(config.character, "grab-wall.png", selectedCharacter?.spritesBaseUri),
-        buildSpriteSrc(config.character, "climb-wall-frame-2.png", selectedCharacter?.spritesBaseUri),
-      ],
-      ceilingWalk: [
-        buildSpriteSrc(config.character, "grab-ceiling.png", selectedCharacter?.spritesBaseUri),
-        buildSpriteSrc(config.character, "climb-ceiling-frame-1.png", selectedCharacter?.spritesBaseUri),
-        buildSpriteSrc(config.character, "grab-ceiling.png", selectedCharacter?.spritesBaseUri),
-        buildSpriteSrc(config.character, "climb-ceiling-frame-2.png", selectedCharacter?.spritesBaseUri),
-      ],
-      usingComputer: [
-        buildSpriteSrc(config.character, "sit-pc-edge-legs-down.png", selectedCharacter?.spritesBaseUri),
-        buildSpriteSrc(config.character, "sit-pc-edge-dangle-frame-1.png", selectedCharacter?.spritesBaseUri),
-        buildSpriteSrc(config.character, "sit-pc-edge-dangle-frame-2.png", selectedCharacter?.spritesBaseUri),
-      ],
-    }),
-    [config.character, selectedCharacter?.spritesBaseUri],
+  const nejoPolicy = useMemo(
+    () =>
+      new NejoHackathonMotionPolicy(config.character, selectedCharacter?.availableSpriteFiles),
+    [config.character, selectedCharacter?.availableSpriteFiles],
   );
+
+  const setMovementState = useCallback(
+    (state: MascotState) => {
+      movementStateRef.current = nejoPolicy.resolveMovementState(state);
+    },
+    [nejoPolicy],
+  );
+
+  const spriteBaseUri = selectedCharacter?.spritesBaseUri ?? null;
+
+  const frames = useMemo(() => {
+    const mapUrls = (files: readonly string[], fallback: readonly string[]) =>
+      nejoPolicy
+        .getAnimationFiles(files, fallback)
+        .map((fileName) => buildSpriteSrc(config.character, fileName, spriteBaseUri));
+
+    return {
+      stand: buildSpriteSrc(config.character, "stand-neutral.png", spriteBaseUri),
+      sit: mapUrls(PREVIEW_ANIMATION_SETS.sit, ["sit-edge-legs-down.png"]),
+      jump: mapUrls(PREVIEW_ANIMATION_SETS.jump, ["stand-neutral.png"]),
+      drag: mapUrls(PREVIEW_ANIMATION_SETS.drag, ["stand-neutral.png"]),
+      walk: mapUrls(
+        ["walk-step-left.png", "stand-neutral.png", "walk-step-right.png", "stand-neutral.png"],
+        ["stand-neutral.png"],
+      ),
+      wallClimb: mapUrls(
+        ["grab-wall.png", "climb-wall-frame-1.png", "grab-wall.png", "climb-wall-frame-2.png"],
+        ["stand-neutral.png"],
+      ),
+      ceilingWalk: mapUrls(
+        ["grab-ceiling.png", "climb-ceiling-frame-1.png", "grab-ceiling.png", "climb-ceiling-frame-2.png"],
+        ["stand-neutral.png"],
+      ),
+      usingComputer: mapUrls(PREVIEW_ANIMATION_SETS.usingComputer, ["sit-pc-edge-legs-down.png"]),
+    };
+  }, [config.character, nejoPolicy, spriteBaseUri]);
 
   const focusChatInput = () => {
     requestAnimationFrame(() => {
@@ -517,6 +713,8 @@ export function SiteMochiMascot() {
     actorRef.current?.setPointerCapture(event.pointerId);
     isDraggingRef.current = false;
     blockClickRef.current = false;
+    dragFrameIndexRef.current = 0;
+    jumpBurstUntilRef.current = 0;
     const { x: currX, y: currY } = currentPosRef.current;
     dragStateRef.current = {
       pointerId: event.pointerId,
@@ -558,28 +756,31 @@ export function SiteMochiMascot() {
       fallVelocityRef.current = 0;
       if (clamped.y >= bounds.maxY - 1) {
         currentPosRef.current = { x: clamped.x, y: bounds.maxY };
-        movementStateRef.current = "floor-walking";
+        setMovementState("floor-walking");
       } else if (clamped.y <= bounds.minY + 1) {
         currentPosRef.current = { x: clamped.x, y: bounds.minY };
-        movementStateRef.current = "ceiling-walking";
+        setMovementState("ceiling-walking");
       } else if (clamped.x <= bounds.minX + 1) {
         currentPosRef.current = { x: bounds.minX, y: clamped.y };
-        movementStateRef.current = "wall-climbing";
+        setMovementState("wall-climbing");
         wallSideRef.current = "left";
         wallDirRef.current = -1;
       } else if (clamped.x >= bounds.maxX - 1) {
         currentPosRef.current = { x: bounds.maxX, y: clamped.y };
-        movementStateRef.current = "wall-climbing";
+        setMovementState("wall-climbing");
         wallSideRef.current = "right";
         wallDirRef.current = -1;
       } else {
-        movementStateRef.current = "falling";
+        setMovementState("falling");
       }
       phaseRef.current = "auto";
       wanderPauseRef.current.nextPauseAt = 0;
       wanderPauseRef.current.pauseUntil = 0;
       wanderPauseRef.current.lastMovementState = null;
-      if (wasDragging) triggerJumpBurst();
+      if (wasDragging) {
+        jumpBurstUntilRef.current = performance.now() + SPARKLE_DURATION;
+        triggerJumpBurst();
+      }
       event.preventDefault();
     };
 
@@ -603,7 +804,7 @@ export function SiteMochiMascot() {
       const startX = bounds.minX + Math.random() * span;
       const startY = FALL_START_Y;
       currentPosRef.current = { x: startX, y: startY };
-      movementStateRef.current = "falling";
+      setMovementState("falling");
       fallVelocityRef.current = 0;
       floorDirRef.current = Math.random() < 0.5 ? -1 : 1;
       ceilingDirRef.current = floorDirRef.current;
@@ -629,7 +830,7 @@ export function SiteMochiMascot() {
     let lastT = 0;
     let lastFrameT = 0;
     let frameIdx = 0;
-    let lastAnimState: MascotState | "held" | "chat-using-computer" | "chat-idle" | null = null;
+    let lastAnimState: string | null = null;
 
     const tick = (time: number) => {
       if (!wrapRef.current || !isInitializedRef.current) {
@@ -690,8 +891,36 @@ export function SiteMochiMascot() {
       if (phase === "held" && dragStateRef.current) {
         const next = clampToMotionBounds(dragStateRef.current.pos.x, dragStateRef.current.pos.y, bounds);
         targetPos = next;
-        imgRef.current?.setAttribute("src", frames.stand);
-        lastAnimState = "held";
+        if (isDraggingRef.current) {
+          const animState = "drag";
+          const activeFrames = frames.drag;
+          if (lastAnimState !== animState) {
+            dragFrameIndexRef.current = 0;
+            lastFrameT = time;
+            imgRef.current?.setAttribute("src", activeFrames[dragFrameIndexRef.current]);
+          } else if (time - lastFrameT > 100) {
+            lastFrameT = time;
+            dragFrameIndexRef.current = (dragFrameIndexRef.current + 1) % activeFrames.length;
+            imgRef.current?.setAttribute("src", activeFrames[dragFrameIndexRef.current]);
+          }
+          lastAnimState = animState;
+        } else {
+          imgRef.current?.setAttribute("src", frames.sit);
+          lastAnimState = "held-sit";
+        }
+      } else if (jumpBurstUntilRef.current > time) {
+        const animState = "jump";
+        const activeFrames = frames.jump;
+        if (lastAnimState !== animState) {
+          frameIdx = 0;
+          lastFrameT = time;
+          imgRef.current?.setAttribute("src", activeFrames[frameIdx]);
+        } else if (time - lastFrameT > 110) {
+          lastFrameT = time;
+          frameIdx = (frameIdx + 1) % activeFrames.length;
+          imgRef.current?.setAttribute("src", activeFrames[frameIdx]);
+        }
+        lastAnimState = animState;
       } else if (openRef.current) {
         const openPos = { ...currentPosRef.current };
         const { width: viewportWidth, height: viewportHeight } = getViewportSize();
@@ -716,8 +945,8 @@ export function SiteMochiMascot() {
           }
           lastAnimState = animState;
         } else {
-          imgRef.current?.setAttribute("src", frames.stand);
-          lastAnimState = "chat-idle";
+          imgRef.current?.setAttribute("src", frames.sit);
+          lastAnimState = "chat-sit";
         }
       } else {
         const state = movementStateRef.current;
@@ -760,7 +989,7 @@ export function SiteMochiMascot() {
           if (next.y >= bounds.maxY) {
             next.y = bounds.maxY;
             fallVelocityRef.current = 0;
-            movementStateRef.current = "floor-walking";
+            setMovementState("floor-walking");
             floorDirRef.current = Math.random() < 0.5 ? -1 : 1;
           }
         } else if (state === "floor-walking") {
@@ -771,12 +1000,12 @@ export function SiteMochiMascot() {
           if (next.x <= bounds.minX) {
             next.x = bounds.minX;
             wallSideRef.current = "left";
-            movementStateRef.current = "wall-climbing";
+            setMovementState("wall-climbing");
             wallDirRef.current = -1;
           } else if (next.x >= bounds.maxX) {
             next.x = bounds.maxX;
             wallSideRef.current = "right";
-            movementStateRef.current = "wall-climbing";
+            setMovementState("wall-climbing");
             wallDirRef.current = -1;
           }
         } else if (state === "wall-climbing") {
@@ -786,11 +1015,11 @@ export function SiteMochiMascot() {
           }
           if (next.y <= bounds.minY) {
             next.y = bounds.minY;
-            movementStateRef.current = "ceiling-walking";
+            setMovementState("ceiling-walking");
             ceilingDirRef.current = wallSideRef.current === "left" ? 1 : -1;
           } else if (next.y >= bounds.maxY) {
             next.y = bounds.maxY;
-            movementStateRef.current = "floor-walking";
+            setMovementState("floor-walking");
             floorDirRef.current = wallSideRef.current === "left" ? 1 : -1;
           }
         } else {
@@ -801,7 +1030,7 @@ export function SiteMochiMascot() {
           if (next.x <= bounds.minX) {
             next.x = bounds.minX;
             if (Math.random() < CEILING_DESCEND_WALL_CHANCE) {
-              movementStateRef.current = "wall-climbing";
+              setMovementState("wall-climbing");
               wallSideRef.current = "left";
               wallDirRef.current = 1;
             } else {
@@ -810,7 +1039,7 @@ export function SiteMochiMascot() {
           } else if (next.x >= bounds.maxX) {
             next.x = bounds.maxX;
             if (Math.random() < CEILING_DESCEND_WALL_CHANCE) {
-              movementStateRef.current = "wall-climbing";
+              setMovementState("wall-climbing");
               wallSideRef.current = "right";
               wallDirRef.current = 1;
             } else {
@@ -893,7 +1122,7 @@ export function SiteMochiMascot() {
     return () => {
       cancelAnimationFrame(raf);
     };
-  }, [frames.ceilingWalk, frames.stand, frames.usingComputer, frames.walk, frames.wallClimb]);
+  }, [frames.ceilingWalk, frames.drag, frames.jump, frames.sit, frames.stand, frames.usingComputer, frames.walk, frames.wallClimb, setMovementState]);
 
   useEffect(() => {
     if (!config.enabled) {
@@ -1459,6 +1688,7 @@ export function SiteMochiMascot() {
 
     setMessages(prev => [...prev, { role: "user", content: text, createdAt: new Date().toISOString() }]);
 
+    let streamingAssistantIndex: number | null = null;
     try {
       const history = messagesRef.current
         .slice(-8)
@@ -1495,25 +1725,54 @@ export function SiteMochiMascot() {
           bitteAgentId: config.bitteAgentId,
         });
       } else if (providerForRequest === "bitte") {
-        // Usar créditos del sitio (fallback a site credits)
-        const resp = await fetch("/api/mochi-chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const assistantCreatedAt = new Date().toISOString();
+        const assistantIndex = messagesRef.current.length + 1;
+        streamingAssistantIndex = assistantIndex;
+        const appendStreamingAssistantDelta = (delta: string) => {
+          if (!delta) return;
+          setMessages((prev) =>
+            prev.map((message, index) =>
+              index === assistantIndex
+                ? {
+                    ...message,
+                    content: `${message.content}${delta}`,
+                    streaming: true,
+                  }
+                : message,
+            ),
+          );
+        };
+        const finalizeStreamingAssistant = (content: string) => {
+          setMessages((prev) =>
+            prev.map((message, index) =>
+              index === assistantIndex
+                ? {
+                    ...message,
+                    content,
+                    streaming: false,
+                  }
+                : message,
+            ),
+          );
+        };
+
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "", createdAt: assistantCreatedAt, streaming: true },
+        ]);
+
+        reply = await streamMochiChatReply({
+          body: {
             message: text,
             history,
             lang: language,
             provider: "site",
             character: config.character,
             soulMd: config.soulMd,
-          }),
+          },
+          onDelta: appendStreamingAssistantDelta,
         });
-        const json = await resp.json().catch(() => null);
-        reply = json?.reply;
-        if (!resp.ok || typeof reply !== "string" || !reply.trim()) {
-          const errorCode = typeof json?.error === "string" ? json.error : "bad-response";
-          throw new Error(errorCode);
-        }
+        finalizeStreamingAssistant(reply);
         incrementFreeSiteMessagesUsed();
       } else if (providerForRequest === "ollama" || providerForRequest === "openclaw") {
         const shouldApplyPersonality = providerForRequest !== "openclaw";
@@ -1601,10 +1860,44 @@ export function SiteMochiMascot() {
                 return parsedRelayJson.reply.trim();
               })();
       } else {
-        const resp = await fetch("/api/mochi-chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const assistantCreatedAt = new Date().toISOString();
+        const assistantIndex = messagesRef.current.length + 1;
+        streamingAssistantIndex = assistantIndex;
+        const appendStreamingAssistantDelta = (delta: string) => {
+          if (!delta) return;
+          setMessages((prev) =>
+            prev.map((message, index) =>
+              index === assistantIndex
+                ? {
+                    ...message,
+                    content: `${message.content}${delta}`,
+                    streaming: true,
+                  }
+                : message,
+            ),
+          );
+        };
+        const finalizeStreamingAssistant = (content: string) => {
+          setMessages((prev) =>
+            prev.map((message, index) =>
+              index === assistantIndex
+                ? {
+                    ...message,
+                    content,
+                    streaming: false,
+                  }
+                : message,
+            ),
+          );
+        };
+
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "", createdAt: assistantCreatedAt, streaming: true },
+        ]);
+
+        reply = await streamMochiChatReply({
+          body: {
             message: text,
             history,
             lang: language,
@@ -1620,33 +1913,34 @@ export function SiteMochiMascot() {
             character: config.character,
             soulMd: config.soulMd,
             toolContext: webSearchToolContext,
-          }),
+          },
+          onDelta: appendStreamingAssistantDelta,
         });
-        const json = await resp.json().catch(() => null);
-        reply = json?.reply;
-        if (!resp.ok || typeof reply !== "string" || !reply.trim()) {
-          const errorCode = typeof json?.error === "string" ? json.error : "bad-response";
-          const errorStatus =
-            typeof json?.status === "number" || typeof json?.status === "string"
-              ? String(json.status).trim()
-              : "";
-          const errorDetails =
-            typeof json?.details === "string" ? json.details.trim().slice(0, 240) : "";
-          if (errorCode === "OpenRouter request failed" && errorDetails) {
-            throw new Error(`OPENROUTER_DETAIL:${errorDetails}`);
-          }
-          if (errorCode === "OpenRouter request failed" && errorStatus) {
-            throw new Error(`OPENROUTER_DETAIL:HTTP ${errorStatus}`);
-          }
-          throw new Error(errorCode);
-        }
+        finalizeStreamingAssistant(reply);
       }
 
       if (!reply.trim()) {
         throw new Error("EMPTY_RESPONSE");
       }
       const finalReply = reply.trim();
-      setMessages(prev => [...prev, { role: "assistant", content: finalReply, createdAt: new Date().toISOString() }]);
+      if (streamingAssistantIndex !== null) {
+        setMessages((prev) =>
+          prev.map((message, index) =>
+            index === streamingAssistantIndex
+              ? {
+                  ...message,
+                  content: finalReply,
+                  streaming: false,
+                }
+              : message,
+          ),
+        );
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: finalReply, createdAt: new Date().toISOString() },
+        ]);
+      }
       void speakReply(finalReply);
       playFluteSound("success");
       if (providerForRequest === "site") {
@@ -1673,7 +1967,25 @@ export function SiteMochiMascot() {
         providerForRequest === "openclaw" && rawErrorMessage
           ? rawErrorMessage
           : fallback;
-      setMessages(prev => [...prev, { role: "assistant", content: messageForUser, createdAt: new Date().toISOString() }]);
+      if (streamingAssistantIndex !== null) {
+        setMessages((prev) =>
+          prev.map((message, index) =>
+            index === streamingAssistantIndex
+              ? {
+                  ...message,
+                  content: messageForUser,
+                  createdAt: new Date().toISOString(),
+                  streaming: false,
+                }
+              : message,
+          ),
+        );
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: messageForUser, createdAt: new Date().toISOString() },
+        ]);
+      }
       void speakReply(messageForUser);
       playFluteSound("error");
     } finally {
@@ -1852,7 +2164,7 @@ function handleBubblePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     };
   }, []);
 
-  if (!config.enabled) {
+  if (!config.enabled || pathname !== "/") {
     return null;
   }
 
@@ -1984,6 +2296,7 @@ function handleBubblePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
                   className={`${styles.msg} ${m.role === "user" ? styles.msgUser : styles.msgAssistant}`}
                 >
                   {renderMessageContent(m.content)}
+                  {m.streaming ? <span className={styles.streamingCursor} aria-hidden="true">▍</span> : null}
                   {m.ctaHref && (
                     <>
                       <br />

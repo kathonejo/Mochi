@@ -1806,10 +1806,12 @@ export function SiteMochiCompactConfigWindow({
   activeTab,
   fillHeight = true,
   onOpenMarketplace,
+  onOpenFuel,
 }: {
   activeTab: ConfigPanelTab;
   fillHeight?: boolean;
   onOpenMarketplace?: () => void;
+  onOpenFuel?: () => void;
 }) {
   const { isSpanish } = useLanguage();
   const { theme, setTheme } = useTheme();
@@ -1867,7 +1869,19 @@ export function SiteMochiCompactConfigWindow({
         {activeTab === "soul" ? <SoulFields compact /> : null}
 
         {activeTab === "chat" ? (
-          <ProviderFields compact />
+          <div className="grid gap-4">
+            {onOpenFuel ? (
+              <button
+                type="button"
+                onClick={onOpenFuel}
+                className="flex w-full items-center justify-between rounded-xl bg-amber-500 px-4 py-3 text-left text-xs font-semibold text-black transition hover:bg-amber-400"
+              >
+                <span>{isSpanish ? "Hosting & Créditos de IA" : "Hosting & AI Credits"}</span>
+                <span className="opacity-60">→</span>
+              </button>
+            ) : null}
+            <ProviderFields compact />
+          </div>
         ) : null}
 
         {activeTab === "appearance" ? <ChatAppearanceFields compact /> : null}

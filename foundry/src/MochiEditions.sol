@@ -18,12 +18,10 @@ contract MochiEditions is ERC1155, Ownable {
         minter = nextMinter;
     }
 
-    function createEdition(
-        address to,
-        uint256 amount,
-        string calldata metadataUri,
-        address creator
-    ) external returns (uint256 editionId) {
+    function createEdition(address to, uint256 amount, string calldata metadataUri, address creator)
+        external
+        returns (uint256 editionId)
+    {
         require(amount > 0, "amount=0");
         require(bytes(metadataUri).length >= 7, "tokenUri too short");
         if (minter == address(0)) {

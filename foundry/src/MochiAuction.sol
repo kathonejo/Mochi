@@ -51,8 +51,8 @@ contract MochiAuction is Ownable, ReentrancyGuard {
     uint256 public constant USDC_DECIMALS = 1e6;
     uint256 public constant ORACLE_DECIMALS = 1e8;
 
-    MochiNFT public immutable nft;
-    IERC20 public immutable usdc;
+    MochiNFT public immutable NFT;
+    IERC20 public immutable USDC;
     IPriceOracleLike public oracle;
     EscrowProvider public escrowProvider = EscrowProvider.Internal;
     uint256 public nextAuctionId;
@@ -60,13 +60,22 @@ contract MochiAuction is Ownable, ReentrancyGuard {
     mapping(uint256 => AuctionInfo) public auctions;
     mapping(uint256 => BidInfo) public highestBids;
 
-    event AuctionCreated(uint256 indexed auctionId, address indexed seller, uint256 indexed tokenId, Currency currency, uint256 startingPrice, uint64 endTime);
+    event AuctionCreated(
+        uint256 indexed auctionId,
+        address indexed seller,
+        uint256 indexed tokenId,
+        Currency currency,
+        uint256 startingPrice,
+        uint64 endTime
+    );
     event BidPlaced(uint256 indexed auctionId, address indexed bidder, uint256 amount, Currency currency);
     event AuctionFinalized(uint256 indexed auctionId, address indexed winner, uint256 amount, Currency currency);
 
-    constructor(address initialOwner, address nftAddress, address usdcAddress, address oracleAddress) Ownable(initialOwner) {
-        nft = MochiNFT(nftAddress);
-        usdc = IERC20(usdcAddress);
+    constructor(address initialOwner, address nftAddress, address usdcAddress, address oracleAddress)
+        Ownable(initialOwner)
+    {
+        NFT = MochiNFT(nftAddress);
+        USDC = IERC20(usdcAddress);
         oracle = IPriceOracleLike(oracleAddress);
     }
 
@@ -78,22 +87,20 @@ contract MochiAuction is Ownable, ReentrancyGuard {
         escrowProvider = EscrowProvider.Internal;
     }
 
-    function createItemAuction(
-        uint256 tokenId,
-        uint256 startingPrice,
-        Currency currency,
-        uint64 durationSeconds
-    ) external returns (uint256 auctionId) {
+    function createItemAuction(uint256 tokenId, uint256 startingPrice, Currency currency, uint64 durationSeconds)
+        external
+        returns (uint256 auctionId)
+    {
         require(durationSeconds >= MIN_AUCTION_DURATION, "duration too short");
         require(durationSeconds <= MAX_AUCTION_DURATION, "duration too long");
         require(startingPrice > 0, "price=0");
-        require(nft.ownerOf(tokenId) == msg.sender, "not owner");
+        require(NFT.ownerOf(tokenId) == msg.sender, "not owner");
 
-        nft.transferFrom(msg.sender, address(this), tokenId);
+        NFT.transferFrom(msg.sender, address(this), tokenId);
 
         auctionId = nextAuctionId++;
         AuctionInfo storage auction = auctions[auctionId];
-        auction.tokenUri = nft.tokenURI(tokenId);
+        auction.tokenUri = NFT.tokenURI(tokenId);
         auction.isItemAuction = true;
         auction.seller = msg.sender;
         auction.tokenId = tokenId;
@@ -112,7 +119,7 @@ contract MochiAuction is Ownable, ReentrancyGuard {
 
     function bidUsdc(uint256 auctionId, uint256 amount) external nonReentrant {
         require(amount > 0, "amount=0");
-        usdc.safeTransferFrom(msg.sender, address(this), amount);
+        USDC.safeTransferFrom(msg.sender, address(this), amount);
         _placeBid(auctionId, msg.sender, amount, Currency.Usdc);
     }
 
@@ -125,14 +132,14 @@ contract MochiAuction is Ownable, ReentrancyGuard {
         auction.finalized = true;
         BidInfo memory bid = highestBids[auctionId];
         if (bid.bidder == address(0)) {
-            nft.transferFrom(address(this), auction.seller, auction.tokenId);
+            NFT.transferFrom(address(this), auction.seller, auction.tokenId);
             emit AuctionFinalized(auctionId, address(0), 0, auction.currency);
             return;
         }
 
         _payoutInternal(bid, auction.seller);
 
-        nft.transferFrom(address(this), bid.bidder, auction.tokenId);
+        NFT.transferFrom(address(this), bid.bidder, auction.tokenId);
         emit AuctionFinalized(auctionId, bid.bidder, bid.amount, bid.currency);
     }
 
@@ -161,11 +168,14 @@ contract MochiAuction is Ownable, ReentrancyGuard {
             require(normalizedBid >= normalizedFloor, "below starting price");
         } else {
             uint256 previousNormalized = _normalizeToUsdcE8(previousBid.amount, previousBid.currency);
-            require(normalizedBid >= previousNormalized + ((previousNormalized * MIN_INCREMENT_BPS) / BPS_DENOMINATOR), "bid too low");
+            require(
+                normalizedBid >= previousNormalized + ((previousNormalized * MIN_INCREMENT_BPS) / BPS_DENOMINATOR),
+                "bid too low"
+            );
             _refundBid(previousBid);
         }
 
-        highestBids[auctionId] = BidInfo({ bidder: bidder, amount: amount, currency: currency });
+        highestBids[auctionId] = BidInfo({bidder: bidder, amount: amount, currency: currency});
         emit BidPlaced(auctionId, bidder, amount, currency);
     }
 
@@ -175,7 +185,7 @@ contract MochiAuction is Ownable, ReentrancyGuard {
             (bool ok,) = payable(bid.bidder).call{value: bid.amount}("");
             require(ok, "refund failed");
         } else {
-            usdc.safeTransfer(bid.bidder, bid.amount);
+            USDC.safeTransfer(bid.bidder, bid.amount);
         }
     }
 
@@ -184,7 +194,7 @@ contract MochiAuction is Ownable, ReentrancyGuard {
             (bool ok,) = payable(seller).call{value: bid.amount}("");
             require(ok, "avax payout failed");
         } else {
-            usdc.safeTransfer(seller, bid.amount);
+            USDC.safeTransfer(seller, bid.amount);
         }
     }
 
@@ -194,6 +204,8 @@ contract MochiAuction is Ownable, ReentrancyGuard {
         }
         int256 rawAnswer = oracle.latestAnswer();
         require(rawAnswer > 0, "oracle unavailable");
+        // casting to uint256 is safe because raw answers from the oracle are positive and bounded.
+        // forge-lint: disable-next-line(unsafe-typecast)
         return (amount * uint256(rawAnswer)) / AVAX_DECIMALS;
     }
 

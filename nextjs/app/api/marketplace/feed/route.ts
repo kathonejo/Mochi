@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
         ...swapListings.map((listing) => listing.creator),
       ],
     ).catch(() => {
-      warnings.push("Failed to load artist profiles.");
+      console.warn("Marketplace feed: failed to load artist profiles, continuing without them.");
       return {} as Record<string, ArtistProfile>;
     });
 

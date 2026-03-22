@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { MarketplaceHubMarketplaceTab } from "@/components/marketplace-hub-marketplace-tab";
-import { MarketplaceHubStudioSellTab } from "@/components/marketplace-hub-studio-sell-tab";
-import { MarketplaceHubStudioCommissionsTab } from "@/components/marketplace-hub-studio-commissions-tab";
 import {
   type FeedAssetFilter,
   type FeedSaleFilter,
@@ -45,15 +43,9 @@ import type {
   MarketplaceMyStudioResponse,
   MyStudioCommissionOrderItem,
 } from "@/lib/marketplace-hub-types";
-import {
-  ArrowLeftRight,
-  Loader2,
-  RefreshCw,
-  ShoppingCart,
-  Tag,
-} from "lucide-react";
+import { ShoppingCart, Tag } from "lucide-react";
 
-type MarketplaceHubMode = "all" | "marketplace" | "settings" | "creator";
+type MarketplaceHubMode = "all" | "marketplace" | "settings";
 
 type MarketplaceHubProps = {
   mode?: MarketplaceHubMode;
@@ -64,8 +56,15 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
   const { isSpanish } = useLanguage();
   const { publicKey, isConnected, signTransaction } = useWalletSession();
   const t = (en: string, es: string) => (isSpanish ? es : en);
-  const [marketplaceSellTab, setMarketplaceSellTab] = useState<"explore" | "selling" | "creators">("explore");
-  const [creatorsStudioTab, setCreatorsStudioTab] = useState<"create" | "commissions">("create");
+  const [marketplaceSellTab, setMarketplaceSellTab] = useState<"explore" | "selling">("explore");
+  const [sellingMode, setSellingMode] = useState<"sell" | "auction" | "swap">("sell");
+  const [selectedTokenId, setSelectedTokenId] = useState<number | null>(null);
+  const [sellPrice, setSellPrice] = useState("");
+  const [sellCurrency, setSellCurrency] = useState<"Avax" | "Usdc">("Avax");
+  const [auctionPrice, setAuctionPrice] = useState("");
+  const [auctionCurrency, setAuctionCurrency] = useState<"Avax" | "Usdc">("Avax");
+  const [auctionDurationHours, setAuctionDurationHours] = useState("24");
+  const [swapIntention, setSwapIntention] = useState("");
 
   const [feedAssetFilter, setFeedAssetFilter] = useState<FeedAssetFilter>("all");
   const [feedSaleFilter, setFeedSaleFilter] = useState<FeedSaleFilter>("all");
@@ -79,7 +78,6 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
 
   const [studio, setStudio] = useState<MarketplaceMyStudioResponse | null>(null);
   const [studioLoading, setStudioLoading] = useState(false);
-  const [studioError, setStudioError] = useState("");
 
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(buildProfileDraft(null));
 
@@ -87,28 +85,6 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
   const [auctionBidAmount, setAuctionBidAmount] = useState("");
   const [txBusy, setTxBusy] = useState(false);
   const [txMessage, setTxMessage] = useState("");
-  const localCreatorStudio: MarketplaceMyStudioResponse = {
-    wallet: publicKey || "",
-    profile: null,
-    ownedNfts: [],
-    myListings: [],
-    myCommissionOrdersAsArtist: [],
-    myCommissionOrdersAsBuyer: [],
-    mySwapListings: [],
-    incomingSwapBidsForMyListings: [],
-    myOutgoingSwapBids: [],
-    commissionEggLock: {
-      canListNewCommissionEgg: false,
-      reason: t("Connect a wallet to create commission egg listings.", "Conecta una wallet para crear publicaciones de huevos de comisión."),
-      activeCommissionEggListingId: null,
-      blockingOrderId: null,
-    },
-    auctionCapability: {
-      itemAuctionsAvailable: true,
-      reason: "",
-    },
-    generatedAt: Date.now(),
-  };
 
   async function loadFeed() {
     setFeedLoading(true);
@@ -150,7 +126,6 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
 
   async function loadStudio(wallet: string): Promise<MarketplaceMyStudioResponse | null> {
     setStudioLoading(true);
-    setStudioError("");
     try {
       const response = await fetch(`/api/marketplace/my-studio?wallet=${encodeURIComponent(wallet)}`, {
         cache: "no-store",
@@ -163,9 +138,8 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
       setProfileDraft(buildProfileDraft(payload.profile));
       return payload;
     } catch (error) {
-      setStudio(null);
-      setStudioError(error instanceof Error ? error.message : "Failed to load studio data.");
-      return null;
+    setStudio(null);
+    return null;
     } finally {
       setStudioLoading(false);
     }
@@ -185,13 +159,25 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
   useEffect(() => {
     if (!publicKey) {
       setStudio(null);
-      setStudioError("");
       setProfileDraft(buildProfileDraft(null));
       return;
     }
 
     void loadStudio(publicKey);
   }, [publicKey]);
+
+  useEffect(() => {
+    if (!studio?.ownedNfts?.length) {
+      setSelectedTokenId(null);
+      return;
+    }
+    setSelectedTokenId((current) => {
+      if (current && studio.ownedNfts.some((item) => item.tokenId === current)) {
+        return current;
+      }
+      return studio.ownedNfts[0].tokenId;
+    });
+  }, [studio]);
 
   const liveAuctionItem =
     feed?.items.find((item) => item.saleKind === "auction" && item.status === "active") ||
@@ -801,7 +787,7 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
           {isMarketplaceOnlyMode ? (
             <div className="px-4 pb-0 pt-2">
               <div className="flex flex-col gap-3">
-                <div className="grid flex-1 grid-cols-3 gap-2">
+                <div className="grid flex-1 grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setMarketplaceSellTab("explore")}
@@ -826,18 +812,6 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
                     <Tag className="h-3.5 w-3.5" />
                     {t("Selling", "Vender")}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setMarketplaceSellTab("creators")}
-                    className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 border-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] transition ${
-                      marketplaceSellTab === "creators"
-                        ? "border-fuchsia-300/55 bg-fuchsia-400/18 text-foreground shadow-[4px_4px_0_rgba(217,70,239,0.12)]"
-                        : "border-border bg-white/5 text-muted-foreground hover:bg-white/10"
-                    }`}
-                  >
-                    <ArrowLeftRight className="h-3.5 w-3.5" />
-                    {t("Creators", "Creadores")}
-                  </button>
                 </div>
               </div>
             </div>
@@ -856,7 +830,7 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
               feedSort={feedSort}
               onFeedSortChange={setFeedSort}
               feedError={feedError}
-              feedWarnings={feed?.warnings || []}
+              onRetryFeed={() => void loadFeed()}
               feedLoading={feedLoading}
               marketplaceGridItems={marketplaceGridItems}
               liveAuctionItem={liveAuctionItem}
@@ -873,205 +847,192 @@ export function MarketplaceHub({ mode = "all", variant = "page" }: MarketplaceHu
 
           {/* Sell / Swap tab */}
           {isMarketplaceOnlyMode && marketplaceSellTab === "selling" ? (
-            <div className="px-4">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
-                  <Tag className="h-5 w-5 text-blue-300" />
-                  {t("Sell / Auction / Swap", "Vender / Subastar / Swap")}
-                </h2>
-                {publicKey ? (
-                  <Button
+            <div className="px-4 space-y-5">
+              <div className="grid grid-cols-3 gap-2">
+                {(["sell", "auction", "swap"] as const).map((option) => (
+                  <button
+                    key={option}
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-border bg-white/5 text-foreground hover:bg-white/10"
-                    onClick={() => void loadStudio(publicKey)}
-                    disabled={studioLoading}
+                    className={`rounded-xl border-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] transition ${
+                      sellingMode === option
+                        ? "border-blue-300/55 bg-blue-400/18 text-foreground shadow-[4px_4px_0_rgba(96,165,250,0.12)]"
+                        : "border-border bg-white/5 text-muted-foreground hover:border-white/20"
+                    }`}
+                    onClick={() => setSellingMode(option)}
                   >
-                    {studioLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                    {t("Refresh", "Actualizar")}
-                  </Button>
-                ) : null}
+                    {option === "sell"
+                      ? t("Sell", "Vender")
+                      : option === "auction"
+                        ? t("Auction", "Subasta")
+                        : t("Swap", "Swap")}
+                  </button>
+                ))}
               </div>
-              {!isConnected || !publicKey ? (
-                <div className="rounded-2xl border border-dashed border-border bg-white/5 p-6 text-center text-sm text-muted-foreground">
-                  <div className="flex flex-col items-center gap-3">
-                    <p>{t("Connect an EVM wallet to list your NFTs.", "Conecta una wallet EVM para publicar tus NFTs.")}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("Connect from the landing header to publish.", "Conecta desde el header del landing para publicar.")}
-                    </p>
+              <div className="mt-4 space-y-3">
+                {sellingMode === "sell" && (
+                  <div className="rounded-2xl border border-white/10 bg-background/30 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{t("Sell", "Vender")}</p>
+                    <div className="mt-4 space-y-3 text-[11px]">
+                      <div>
+                        <label className="block text-xs text-muted-foreground">{t("NFT to sell", "NFT para vender")}</label>
+                        <select
+                          className="mt-1 w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm text-foreground"
+                          value={selectedTokenId ?? ""}
+                          onChange={(event) => setSelectedTokenId(Number(event.target.value) || null)}
+                        >
+                          <option value="">{t("Select token", "Seleccionar token")}</option>
+                          {studio?.ownedNfts.map((token) => (
+                            <option key={token.tokenId} value={token.tokenId}>
+                              #{token.tokenId} — {token.tokenName ?? token.metadata?.name ?? "Mochi"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div>
+                          <label className="block text-xs text-muted-foreground">{t("Price", "Precio")}</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={sellPrice}
+                            onChange={(event) => setSellPrice(event.target.value)}
+                            className="mt-1 w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm text-foreground"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-muted-foreground">{t("Currency", "Moneda")}</label>
+                          <select
+                            className="mt-1 w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm text-foreground"
+                            value={sellCurrency}
+                            onChange={(event) => setSellCurrency(event.target.value as "Avax" | "Usdc")}
+                          >
+                            <option value="Avax">AVAX</option>
+                            <option value="Usdc">USDC</option>
+                          </select>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="w-full rounded-xl border border-emerald-400/60 bg-emerald-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground transition hover:bg-emerald-500/25 disabled:opacity-60"
+                        onClick={() => selectedTokenId !== null && handleCreateListing(selectedTokenId, sellPrice, sellCurrency)}
+                        disabled={!selectedTokenId || !sellPrice}
+                      >
+                        {t("List NFT", "Publicar NFT")}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : studioLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : studio ? (
-                <MarketplaceHubStudioSellTab
-                  t={t}
-                  studio={studio}
-                  tokenPreviews={tokenPreviews}
-                  txBusy={txBusy}
-                  publicKey={publicKey}
-                  showCreatePanel={false}
-                  showTradePanel
-                  onCreateListing={(tokenId, price, currency) => void handleCreateListing(tokenId, price, currency)}
-                  onCreateAuction={(tokenId, price, currency, durationHours) =>
-                    void handleCreateItemAuction(tokenId, price, currency, durationHours)
-                  }
-                  onCreateNftPackage={(request) => void handleCreateNftPackage(request)}
-                  onCancelListing={(listingId) => void handleCancelListing(listingId)}
-                  onCreateSwapOffer={(tokenId, intention) => void handleCreateSwapOffer(tokenId, intention)}
-                  onAcceptSwapBid={(listingId, bidId) => handleAcceptSwapBid(listingId, bidId)}
-                  onCancelSwapListing={(listingId) => handleCancelSwapListing(listingId)}
-                  onCancelSwapBid={(bidId) => handleCancelSwapBid(bidId)}
-                />
-              ) : studioError ? (
-                <div className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-foreground">
-                  {studioError}
-                </div>
-              ) : null}
+                )}
+                {sellingMode === "auction" && (
+                  <div className="rounded-2xl border border-white/10 bg-background/30 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{t("Auction", "Subasta")}</p>
+                    <div className="mt-4 space-y-3 text-[11px]">
+                      <div>
+                        <label className="block text-xs text-muted-foreground">{t("NFT to auction", "NFT para subastar")}</label>
+                        <select
+                          className="mt-1 w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm text-foreground"
+                          value={selectedTokenId ?? ""}
+                          onChange={(event) => setSelectedTokenId(Number(event.target.value) || null)}
+                        >
+                          <option value="">{t("Select token", "Seleccionar token")}</option>
+                          {studio?.ownedNfts.filter((token) => !token.isCommissionEgg).map((token) => (
+                            <option key={token.tokenId} value={token.tokenId}>
+                              #{token.tokenId} — {token.tokenName ?? token.metadata?.name ?? "Mochi"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div>
+                          <label className="block text-xs text-muted-foreground">{t("Starting bid", "Puja inicial")}</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={auctionPrice}
+                            onChange={(event) => setAuctionPrice(event.target.value)}
+                            className="mt-1 w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm text-foreground"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-muted-foreground">{t("Currency", "Moneda")}</label>
+                          <select
+                            className="mt-1 w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm text-foreground"
+                            value={auctionCurrency}
+                            onChange={(event) => setAuctionCurrency(event.target.value as "Avax" | "Usdc")}
+                          >
+                            <option value="Avax">AVAX</option>
+                            <option value="Usdc">USDC</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-muted-foreground">{t("Duration (hours)", "Duración (horas)")}</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={auctionDurationHours}
+                          onChange={(event) => setAuctionDurationHours(event.target.value)}
+                          className="mt-1 w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm text-foreground"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="w-full rounded-xl border border-cyan-300/60 bg-cyan-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground transition hover:bg-cyan-500/25 disabled:opacity-60"
+                        onClick={() =>
+                          selectedTokenId !== null &&
+                          handleCreateItemAuction(selectedTokenId, auctionPrice, auctionCurrency, auctionDurationHours)
+                        }
+                        disabled={!selectedTokenId || !auctionPrice}
+                      >
+                        {t("Create auction", "Crear subasta")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {sellingMode === "swap" && (
+                  <div className="rounded-2xl border border-white/10 bg-background/30 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{t("Swap", "Swap")}</p>
+                    <div className="mt-4 space-y-3 text-[11px]">
+                      <div>
+                        <label className="block text-xs text-muted-foreground">{t("NFT to swap", "NFT para swap")}</label>
+                        <select
+                          className="mt-1 w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm text-foreground"
+                          value={selectedTokenId ?? ""}
+                          onChange={(event) => setSelectedTokenId(Number(event.target.value) || null)}
+                        >
+                          <option value="">{t("Select token", "Seleccionar token")}</option>
+                          {studio?.ownedNfts.map((token) => (
+                            <option key={token.tokenId} value={token.tokenId}>
+                              #{token.tokenId} — {token.tokenName ?? token.metadata?.name ?? "Mochi"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-muted-foreground">{t("Intention", "Intención")}</label>
+                        <input
+                          type="text"
+                          value={swapIntention}
+                          onChange={(event) => setSwapIntention(event.target.value)}
+                          className="mt-1 w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm text-foreground"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="w-full rounded-xl border border-violet-400/60 bg-violet-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground transition hover:bg-violet-500/25 disabled:opacity-60"
+                        onClick={() => selectedTokenId !== null && handleCreateSwapOffer(selectedTokenId, swapIntention)}
+                        disabled={!selectedTokenId || !swapIntention.trim()}
+                      >
+                        {t("Create swap", "Crear swap")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           ) : null}
 
-          {/* Creators tab */}
-          {(isMarketplaceOnlyMode && marketplaceSellTab === "creators") || isCreatorOnlyMode ? (
-            <div className="px-4">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
-                  <ArrowLeftRight className="h-5 w-5 text-fuchsia-300" />
-                  {isCreatorOnlyMode ? t("Character Creator Studio", "Estudio creador de personajes") : t("Creators Studio", "Estudio de Creadores")}
-                </h2>
-                {publicKey ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-border bg-white/5 text-foreground hover:bg-white/10"
-                    onClick={() => void loadStudio(publicKey)}
-                    disabled={studioLoading}
-                  >
-                    {studioLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                    {t("Refresh", "Actualizar")}
-                  </Button>
-                ) : null}
-              </div>
-              <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-border bg-white/5 p-1">
-                <button
-                  type="button"
-                  onClick={() => setCreatorsStudioTab("create")}
-                  className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 border-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] transition ${
-                    creatorsStudioTab === "create"
-                      ? "border-blue-300/55 bg-blue-400/18 text-foreground shadow-[4px_4px_0_rgba(96,165,250,0.12)]"
-                      : "border-border bg-white/5 text-muted-foreground hover:bg-white/10"
-                  }`}
-                >
-                  <Tag className="h-3.5 w-3.5" />
-                  {t("Create", "Crear")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCreatorsStudioTab("commissions")}
-                  className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 border-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] transition ${
-                    creatorsStudioTab === "commissions"
-                      ? "border-fuchsia-300/55 bg-fuchsia-400/18 text-foreground shadow-[4px_4px_0_rgba(217,70,239,0.12)]"
-                      : "border-border bg-white/5 text-muted-foreground hover:bg-white/10"
-                  }`}
-                >
-                  <ArrowLeftRight className="h-3.5 w-3.5" />
-                  {t("Commissions", "Comisiones")}
-                </button>
-              </div>
-              {!isConnected || !publicKey ? (
-                creatorsStudioTab === "create" ? (
-                  <MarketplaceHubStudioSellTab
-                    t={t}
-                    studio={localCreatorStudio}
-                    tokenPreviews={tokenPreviews}
-                    txBusy={txBusy}
-                    publicKey={publicKey}
-                    showCreatePanel
-                    showTradePanel={false}
-                    onCreateListing={(tokenId, price, currency) => void handleCreateListing(tokenId, price, currency)}
-                    onCreateAuction={(tokenId, priceAvax, priceUsdc, durationHours) =>
-                      void handleCreateItemAuction(tokenId, priceAvax, priceUsdc, durationHours)
-                    }
-                    onCreateNftPackage={(request) => void handleCreateNftPackage(request)}
-                    onCancelListing={(listingId) => void handleCancelListing(listingId)}
-                    onCreateSwapOffer={(tokenId, intention) => void handleCreateSwapOffer(tokenId, intention)}
-                    onAcceptSwapBid={(listingId, bidId) => handleAcceptSwapBid(listingId, bidId)}
-                    onCancelSwapListing={(listingId) => handleCancelSwapListing(listingId)}
-                    onCancelSwapBid={(bidId) => handleCancelSwapBid(bidId)}
-                  />
-                ) : (
-                <div className="rounded-2xl border border-dashed border-border bg-white/5 p-6 text-center text-sm text-muted-foreground">
-                  <div className="flex flex-col items-center gap-3">
-                    <p>
-                      {t(
-                        "Connect an EVM wallet to create NFTs and manage commissions.",
-                        "Conecta una wallet EVM para crear NFTs y gestionar comisiones.",
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t(
-                        "Connect from the landing header to create NFTs and manage commissions.",
-                        "Conecta desde el header del landing para crear NFTs y gestionar comisiones.",
-                      )}
-                    </p>
-                  </div>
-                </div>
-                )
-              ) : studioLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : studio ? (
-                creatorsStudioTab === "create" ? (
-                  <MarketplaceHubStudioSellTab
-                    t={t}
-                    studio={studio}
-                    tokenPreviews={tokenPreviews}
-                    txBusy={txBusy}
-                    publicKey={publicKey}
-                    showCreatePanel
-                    showTradePanel={false}
-                    onCreateListing={(tokenId, price, currency) => void handleCreateListing(tokenId, price, currency)}
-                    onCreateAuction={(tokenId, priceAvax, priceUsdc, durationHours) =>
-                      void handleCreateItemAuction(tokenId, priceAvax, priceUsdc, durationHours)
-                    }
-                    onCreateNftPackage={(request) => void handleCreateNftPackage(request)}
-                    onCancelListing={(listingId) => void handleCancelListing(listingId)}
-                    onCreateSwapOffer={(tokenId, intention) => void handleCreateSwapOffer(tokenId, intention)}
-                    onAcceptSwapBid={(listingId, bidId) => handleAcceptSwapBid(listingId, bidId)}
-                    onCancelSwapListing={(listingId) => handleCancelSwapListing(listingId)}
-                    onCancelSwapBid={(bidId) => handleCancelSwapBid(bidId)}
-                  />
-                ) : (
-                  <MarketplaceHubStudioCommissionsTab
-                    t={t}
-                    studio={studio}
-                    tokenPreviews={tokenPreviews}
-                    txBusy={txBusy}
-                    publicKey={publicKey}
-                    onCreateCommissionEgg={(uri, price, currency, etaDays) =>
-                      void handleCreateCommissionEgg(uri, price, currency, etaDays)
-                    }
-                    onCancelListing={(listingId) => void handleCancelListing(listingId)}
-                    onCommissionOrderAction={(order, action, metadataUri) =>
-                      handleCommissionOrderAction(order, action, metadataUri)
-                    }
-                    onCommissionRevisionRequest={(order, intention, reference) =>
-                      handleCommissionRevisionRequest(order, intention, reference)
-                    }
-                  />
-                )
-              ) : studioError ? (
-                <div className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-foreground">
-                  {studioError}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
         </>
       ) : null}
 

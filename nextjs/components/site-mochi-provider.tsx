@@ -30,6 +30,7 @@ export type SiteMochiCharacterOption = {
   label: string;
   iconUrl: string;
   spritesBaseUri?: string | null;
+  availableSpriteFiles?: string[];
 };
 
 export type SiteMochiPersonalityOption = {

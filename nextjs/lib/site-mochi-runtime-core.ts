@@ -3,6 +3,7 @@ import "server-only";
 import { readFile, readdir } from "node:fs/promises";
 import fs from "node:fs";
 import path from "node:path";
+import { normalizeSpriteFileName } from "@/lib/mochi-sprite-spec";
 
 export const SITE_MOCHI_FREE_MESSAGE_LIMIT = 4;
 
@@ -11,6 +12,7 @@ export type RuntimeCoreCharacterCatalogEntry = {
   label: string;
   iconUrl: string;
   spritesBaseUri?: string | null;
+  availableSpriteFiles: string[];
 };
 
 export type RuntimeCorePersonalityCatalogEntry = {
@@ -114,23 +116,38 @@ function assertSafeFileName(fileName: string) {
 
 async function loadCharacters(): Promise<RuntimeCoreCharacterCatalogEntry[]> {
   const dirEntries = await readdir(RUNTIME_CORE_CHARACTERS_DIR, { withFileTypes: true });
-  return dirEntries
+  const candidateKeys = dirEntries
     .filter(
       (entry) =>
         entry.isDirectory() &&
         SAFE_SEGMENT_RE.test(entry.name) &&
         !NFT_GATED_CHARACTER_KEYS.has(entry.name),
     )
-    .map((entry) => {
-      const key = entry.name;
+    .map((entry) => entry.name);
+
+  const characters = await Promise.all(
+    candidateKeys.map(async (key) => {
+      let availableSpriteFiles: string[] = [];
+      try {
+        const snapshotFiles = await readdir(path.join(RUNTIME_CORE_CHARACTERS_DIR, key));
+        const normalized = snapshotFiles
+          .map((fileName) => normalizeSpriteFileName(fileName))
+          .filter((fileName) => fileName && ALLOWED_SITE_SPRITE_FILES.has(fileName));
+        availableSpriteFiles = Array.from(new Set(normalized)).sort();
+      } catch (error) {
+        availableSpriteFiles = [];
+      }
       return {
         key,
         label: normalizeLabelFromKey(key),
         iconUrl: `/api/site-mochi/sprite/${encodeURIComponent(key)}/icon.png`,
         spritesBaseUri: null,
+        availableSpriteFiles,
       };
-    })
-    .sort((a, b) => a.label.localeCompare(b.label));
+    }),
+  );
+
+  return characters.sort((a, b) => a.label.localeCompare(b.label));
 }
 
 async function loadPersonalities(): Promise<RuntimeCorePersonalityCatalogEntry[]> {

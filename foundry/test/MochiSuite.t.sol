@@ -200,12 +200,7 @@ contract MochiSuiteTest is Test {
         vm.startPrank(buyer);
         usdc.approve(address(commission), type(uint256).max);
         uint256 commissionId = commission.createCommission(
-            "A sleepy cat",
-            "ipfs://ref",
-            2 ether,
-            250 * 1e6,
-            125 * 1e8,
-            MochiCommission.Currency.Usdc
+            "A sleepy cat", "ipfs://ref", 2 ether, 250 * 1e6, 125 * 1e8, MochiCommission.Currency.Usdc
         );
         vm.stopPrank();
 
