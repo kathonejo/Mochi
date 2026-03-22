@@ -1,0 +1,118 @@
+body {
+  width: 100%;
+  min-width: 360px;
+  min-height: 100vh;
+}
+
+.controls-section {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.popup-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.security-lock-banner.show {
+  display: block;
+}
+
+.is-disabled {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+  pointer-events: none;
+}
+
+.is-disabled .ai-input,
+.is-disabled .ai-select,
+.is-disabled .control-btn,
+.is-disabled .toggle-row {
+  cursor: not-allowed;
+}
+
+.desktop-note {
+  margin-top: 8px;
+  font-size: 10px;
+  color: rgba(200, 210, 235, 0.7);
+}
+
+body[data-theme="kawaii"] .desktop-note {
+  color: rgba(42, 31, 78, 0.75);
+}
+
+.mochi-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mochi-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.ai-core-panel {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-core-panel .ai-hint {
+  margin-top: 4px;
+}
+
+.ai-config-panel {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ai-config-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-guide {
+  font-size: 11px;
+  color: rgba(200, 210, 235, 0.6);
+}
+
+.ai-guide a {
+  color: rgba(140, 160, 255, 0.9);
+  text-decoration: none;
+}
+
+.ai-guide a:hover {
+  text-decoration: underline;
+}
+
+#ai-test-btn {
+  align-self: flex-start;
+}
+
+#ai-test-status {
+  font-size: 11px;
+}
+
+.chat-style-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.chat-style-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .mochi-grid,
+  .chat-style-grid {
+    grid-template-columns: 1fr;
+  }
+}

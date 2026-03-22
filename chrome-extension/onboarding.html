@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mochi - Onboarding</title>
+  <link rel="stylesheet" type="text/css" href="onboarding.css">
+</head>
+<body>
+  <main class="onboarding-shell">
+    <header class="onboarding-hero">
+      <div class="onboarding-top-row">
+        <div class="onboarding-logo">Mochi</div>
+        <div class="onboarding-lang">
+          <label id="lang-label" for="lang-select">Language</label>
+          <select id="lang-select">
+            <option value="en">English</option>
+            <option value="es">Español</option>
+          </select>
+        </div>
+      </div>
+      <h1 id="onboarding-title">Welcome! Let's bring your first mochi to life.</h1>
+      <p id="onboarding-subtitle">Configure the AI Brain and start chatting in seconds.</p>
+    </header>
+
+    <section class="onboarding-card">
+      <div class="card-header">
+        <span class="card-step">Step 1</span>
+        <h2 id="brain-title">AI Brain Setup</h2>
+      </div>
+
+      <div class="field">
+        <label id="mode-label">AI Brain</label>
+        <select id="mode-select">
+          <option value="standard">Standard (API key only)</option>
+          <option value="agent">AI Agent</option>
+          <option value="off">Off</option>
+        </select>
+      </div>
+
+      <div class="field" id="provider-field">
+        <label id="provider-label">Provider</label>
+        <select id="provider-select">
+          <option value="openrouter">OpenRouter</option>
+          <option value="ollama">Ollama (local)</option>
+        </select>
+      </div>
+
+      <div id="openrouter-block">
+        <div class="field">
+          <label id="api-key-label">OpenRouter API Key</label>
+          <input id="openrouter-key" type="password" placeholder="Paste your API key" />
+        </div>
+        <a class="openrouter-link" id="openrouter-link" href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer">Get an OpenRouter API key</a>
+        <div class="field">
+          <label id="model-label">Model</label>
+          <select id="model-select"></select>
+        </div>
+        <p class="hint" id="openrouter-hint"></p>
+      </div>
+
+      <div id="ollama-block" class="hidden">
+        <div class="field">
+          <label id="ollama-url-label">Ollama URL</label>
+          <input id="ollama-url" type="text" placeholder="http://127.0.0.1:11434" />
+        </div>
+        <div class="field">
+          <label id="ollama-model-list-label">Detected Models</label>
+          <div class="inline-row">
+            <select id="ollama-model-select"></select>
+            <button id="ollama-refresh" class="secondary inline-btn" type="button">Refresh</button>
+          </div>
+          <p class="hint" id="ollama-models-status"></p>
+        </div>
+        <div class="field">
+          <label id="ollama-model-label">Ollama Model</label>
+          <input id="ollama-model" type="text" placeholder="gemma3:1b" />
+        </div>
+        <p class="hint" id="ollama-hint">Use a local Ollama server to keep everything on-device.</p>
+      </div>
+
+      <div id="agent-block" class="hidden">
+        <div class="field">
+          <label id="openclaw-url-label">Gateway URL</label>
+          <input id="openclaw-url" type="text" placeholder="ws://127.0.0.1:18789" />
+        </div>
+        <div class="field">
+          <label id="openclaw-agent-name-label">Agent Name</label>
+          <input id="openclaw-agent-name" type="text" placeholder="chrome-mochi-1" />
+        </div>
+        <div class="field">
+          <label id="openclaw-token-label">Gateway Auth Token</label>
+          <input id="openclaw-token" type="password" placeholder="Enter gateway token" />
+        </div>
+        <p class="hint" id="openclaw-hint">OpenClaw needs a WebSocket URL + gateway token. To get the token run: openclaw config get gateway.auth.token</p>
+        <p class="hint" id="openclaw-agent-name-hint">Agent name rules: letters, numbers, '-' and '_' only (max 32).</p>
+      </div>
+
+      <div class="actions">
+        <button id="save-btn" class="primary">Save</button>
+        <button id="skip-btn" class="secondary">Skip for now</button>
+      </div>
+      <p class="footnote" id="add-more-hint">You can add more mochis later with the + button.</p>
+    </section>
+  </main>
+
+  <script src="onboarding.js"></script>
+</body>
+</html>

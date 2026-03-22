@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mochi Desktop Config</title>
+  <link rel="stylesheet" type="text/css" href="popup.css">
+  <link rel="stylesheet" type="text/css" href="settings.css">
+  <style>
+    html, body {
+      width: 100%;
+      min-width: 360px;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    .controls-section {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    @media (max-width: 720px) {
+      .controls-section {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="popup-header">
+    <span class="logo">Mochi Desktop</span>
+    <div class="popup-subtitle" id="popup-subtitle">Your AI mascot orchestrator</div>
+    <div class="popup-stats" id="popup-stats"></div>
+  </header>
+
+  <section class="controls-section">
+    <div class="control-group shortcuts-highlighted">
+      <h3 id="shortcuts-title">Shortcuts</h3>
+      <div class="ai-hint" id="shortcuts-hint">Click a mochi to open chat. Drag to reposition with gravity. Double-click to jump.</div>
+    </div>
+
+    <div class="control-group global-toggle-group">
+      <label class="toggle-row" id="global-mochi-toggle-row">
+        <span class="toggle-label" id="global-mochi-label">Show all mochis</span>
+        <input type="checkbox" id="global-mochi-toggle" class="toggle-checkbox" checked>
+        <span class="toggle-slider"></span>
+      </label>
+      <div class="ai-hint" id="global-mochi-hint">Toggle to show or hide all mochis on screen</div>
+    </div>
+
+    <div class="control-group presence-group" id="presence-group">
+      <div class="presence-panel">
+        <div class="presence-heading">
+          <span id="presence-title">Visibility</span>
+        </div>
+        <label class="toggle-row" id="all-sites-toggle-row">
+          <span class="toggle-label" id="label-enabled-all-sites">Enabled on desktop</span>
+          <input type="checkbox" id="all-sites-toggle" class="toggle-checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row is-disabled" id="page-toggle-row">
+          <span class="toggle-label" id="label-enabled-page">Enable on this app</span>
+          <input type="checkbox" id="page-toggle" class="toggle-checkbox" disabled>
+          <span class="toggle-slider"></span>
+        </label>
+        <div class="global-status" id="global-status"></div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="toggle-row" id="startup-toggle-row">
+        <span class="toggle-label" id="startup-label">Start Mochi on system login</span>
+        <input type="checkbox" id="start-on-startup-toggle" class="toggle-checkbox">
+        <span class="toggle-slider"></span>
+      </label>
+      <div class="ai-hint" id="startup-hint">Launch the desktop app automatically when you sign into Windows, macOS, or Linux.</div>
+      <label class="toggle-row" id="start-minimized-toggle-row">
+        <span class="toggle-label" id="start-minimized-label">Start minimized</span>
+        <input type="checkbox" id="start-minimized-toggle" class="toggle-checkbox">
+        <span class="toggle-slider"></span>
+      </label>
+      <div class="ai-hint" id="start-minimized-hint">Launch without opening the settings window. Mochis still appear and tray icon is available.</div>
+      <button class="control-btn" id="create-shortcut-btn" style="margin-top: 8px; display: none;">Create Desktop Shortcut</button>
+      <div class="ai-hint" id="create-shortcut-status" style="display: none;"></div>
+    </div>
+
+    <div class="control-group" id="mochi-config-group">
+      <div class="section-header">
+        <h3 id="mochi-section-title">Mochis</h3>
+      </div>
+      <div class="security-status config-lock-hint" id="mochi-lock-hint"></div>
+      <div class="ai-hint" id="mochi-limit-hint">Up to 5 mochis on screen</div>
+      <div class="mochi-selector-row">
+        <button class="mochi-add-btn" id="add-mochi-btn" aria-label="Add mochi">+</button>
+        <div class="mochi-selector" id="mochi-selector"></div>
+      </div>
+      <div id="mochi-empty" class="mochi-empty"></div>
+      <div id="mochi-list" class="mochi-list"></div>
+    </div>
+
+    <div class="control-group" id="nft-collection-group">
+      <div class="section-header">
+        <h3 id="nft-section-title">NFT Mochis</h3>
+      </div>
+      <div class="ai-hint" id="nft-hint">NFT collection syncing is coming soon on desktop.</div>
+      <div id="nft-list" class="nft-list is-disabled"></div>
+      <div class="popup-links is-disabled">
+        <a href="#" class="popup-link marketplace-link" tabindex="-1" aria-disabled="true">
+          <span id="link-nft-collection">Manage Collection</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="control-group is-disabled">
+      <h3 id="security-title">Security</h3>
+      <div class="security-box">
+        <div class="security-status" id="security-hint">Desktop security controls are coming soon.</div>
+        <label class="toggle-row mini-toggle">
+          <span class="toggle-label" id="masterkey-label">Protect keys with master key</span>
+          <input type="checkbox" id="masterkey-toggle" class="toggle-checkbox" disabled>
+          <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row mini-toggle" id="autolock-row">
+          <span class="toggle-label" id="autolock-label">Auto-lock</span>
+          <input type="checkbox" id="autolock-toggle" class="toggle-checkbox" disabled>
+          <span class="toggle-slider"></span>
+        </label>
+        <div class="security-input-row" id="autolock-minutes-row">
+          <input type="range" id="autolock-minutes" class="ai-range" min="5" max="120" step="5" disabled>
+          <span class="security-inline-label" id="autolock-minutes-label">30 min</span>
+        </div>
+        <div class="security-input-row">
+          <input type="password" id="masterkey-input" class="ai-input" placeholder="Master key" disabled>
+          <button class="control-btn mini-btn" id="masterkey-action-btn" disabled>Unlock</button>
+        </div>
+        <div class="security-input-row" id="masterkey-confirm-row">
+          <input type="password" id="masterkey-confirm" class="ai-input" placeholder="Confirm password" disabled>
+          <button class="control-btn mini-btn" id="masterkey-save-btn" disabled>Save</button>
+        </div>
+        <div class="security-actions-row" id="masterkey-actions-row">
+          <button class="control-btn mini-btn" id="masterkey-change-btn" disabled>Change password</button>
+        </div>
+        <div class="security-status" id="masterkey-status"></div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="ai-label" id="popup-theme-label">Popup Theme</label>
+      <select class="ai-select" id="popup-theme-select">
+        <option value="random">Random</option>
+        <option value="neural">Neural</option>
+        <option value="pink">Pink</option>
+        <option value="kawaii">Kawaii</option>
+      </select>
+      <div class="desktop-note" id="popup-theme-note">Applies instantly to desktop settings.</div>
+    </div>
+
+    <div class="control-group">
+      <label class="ai-label" id="popup-language-label">Language</label>
+      <select class="ai-select" id="popup-language-select">
+        <option value="en">English</option>
+        <option value="es">Español</option>
+      </select>
+      <div class="desktop-note" id="popup-language-note">Changes labels in settings and chat UI.</div>
+    </div>
+
+    <div class="control-group">
+      <label class="ai-label" id="ui-text-scale-label">UI Text Size</label>
+      <select class="ai-select" id="ui-text-scale-select"></select>
+      <div class="desktop-note" id="ui-text-scale-note">Ctrl/Cmd + or - to resize, Ctrl/Cmd + 0 to reset.</div>
+    </div>
+
+    <div class="control-group">
+      <div class="popup-links footer-links">
+        <a href="https://www.mochi.dev/help#feedback" target="_blank" class="popup-link feedback-link">
+          <span id="link-feedback">Feedback</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+        <a href="https://www.mochi.dev/privacy" target="_blank" class="popup-link privacy-link">
+          <span id="link-privacy">Privacy</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <script src="settings.js"></script>
+</body>
+</html>

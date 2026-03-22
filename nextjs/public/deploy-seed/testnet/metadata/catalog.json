@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-02-28T20:20:36Z",
+  "network": "testnet",
+  "characters": [
+    { "character": "blob", "image": "ipfs://QmZni355pF2rUdJMH6bkTrkn2V14QR3SBSp6rsYCBcY8RK", "metadata": "ipfs://QmaWBgCgPD6UcFVND1i2uAqzYbyDwdCDi1yJ6QFWrJDfgQ" }
+    ,
+    { "character": "bunny", "image": "ipfs://QmRgHFHnhDTPxLVwvvk7LubDiCP1HtzccvNgSLyhtLA9me", "metadata": "ipfs://QmZ56NJszSXkSHrazK535HTa94CQTP2NYX8QJoBaBHwyxs" }
+    ,
+    { "character": "egg", "image": "ipfs://QmTLYjDCP2oKk4xFvSsfU1HpjQNAvRyf6BJCCo2kLwsqmo", "metadata": "ipfs://QmVcwd4oa3GMYwwrhnjLnAeL48L3iMzgKHXsDtK1U2nVQR" }
+    ,
+    { "character": "ghost", "image": "ipfs://QmPjCuXTzyPmDCWV4d8BvvXUFvcj67mLnSacNfzKRafDGc", "metadata": "ipfs://QmX9qKxdMJ4qhwDC1xQwWao2fUTEmgW7tB3qr8HxNqf2xp" }
+    ,
+    { "character": "kitten", "image": "ipfs://QmamAsVSeM5NFpMm9U8FkGu3hf6qGyQBamonXrUMqDQLF2", "metadata": "ipfs://QmbGip45wY2a2cu3MeZqgjJ7mU45JgfPyYszEkTfLnFLiv" }
+    ,
+    { "character": "lobster", "image": "ipfs://QmPkhyhq2cncU6VeoKT8U4upoWdJu86bxnKUqz6upTmTQj", "metadata": "ipfs://QmZrFZxRzRtm1xsYsQWmCGcgiQ8T7fDmQEBhd2kHY72p9y" }
+    ,
+    { "character": "mushroom", "image": "ipfs://QmT5EHUDJ42hfa7wHPuDySF7pq5wiq4VFyzArxPd9NNFL9", "metadata": "ipfs://QmTW2ummWvZnSpycZSekfM51Duhr9J5Q1yaUwPshU6w4ET" }
+    ,
+    { "character": "penguin", "image": "ipfs://QmWAfgBhbduruL1kt8tuyCXquziopjkVWrG6r1kgaup4D4", "metadata": "ipfs://QmdNiy62dfstHU7F6uxRzdZxpooUAP1Q9e41S3WRLzKGXs" }
+    ,
+    { "character": "mochi", "image": "ipfs://QmRz6B5L2NCixX3MGNRAVSgcpstXDny5Hsaa4qNs8Fxxxc", "metadata": "ipfs://QmSfeqbPwnqyYQ5qpHWAXWvzMppYSSUWJ8CegBPS36B87f" }
+  ]
+}

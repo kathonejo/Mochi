@@ -1,0 +1,28 @@
+{
+  "name": "Mochi Placeholder - bunny",
+  "description": "Auto-generated placeholder NFT metadata for local deploy showcase using the bunny idle sprite.",
+  "image": "http://localhost:3000/deploy-seed/local/sprites/bunny-idle.png",
+  "external_url": "http://localhost:3000/marketplace",
+  "attributes": [
+    { "trait_type": "placeholder", "value": "true" },
+    { "trait_type": "network", "value": "local" },
+    { "trait_type": "character", "value": "bunny" },
+    { "trait_type": "sprite_state", "value": "idle" },
+    { "trait_type": "unlock_type", "value": "marketplace_purchase" },
+    { "trait_type": "edition_mode", "value": "edition" },
+    { "trait_type": "edition_size", "value": "100" }
+  ],
+  "properties": {
+    "mochi": {
+      "schema": "mochi_nft_v1",
+      "unlocksAppearance": true,
+      "spritesBaseUri": "http://localhost:3000/api/site-mochi/sprite/bunny",
+      "editionMode": "edition",
+      "copies": 100
+    }
+  },
+  "edition": {
+    "mode": "edition",
+    "size": 100
+  }
+}

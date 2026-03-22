@@ -1,0 +1,25 @@
+{
+  "name": "Mochi Placeholder - blob",
+  "description": "Auto-generated placeholder NFT metadata for testnet deploy showcase using the blob idle sprite.",
+  "image": "ipfs://QmZni355pF2rUdJMH6bkTrkn2V14QR3SBSp6rsYCBcY8RK",
+  "external_url": "https://www.mochi.dev/marketplace",
+  "attributes": [
+    { "trait_type": "placeholder", "value": "true" },
+    { "trait_type": "network", "value": "testnet" },
+    { "trait_type": "character", "value": "blob" },
+    { "trait_type": "sprite_state", "value": "idle" },
+    { "trait_type": "edition_mode", "value": "unique" },
+    { "trait_type": "edition_size", "value": "1" }
+  ],
+  "properties": {
+    "mochi": {
+      "schema": "mochi_nft_v1",
+      "editionMode": "unique",
+      "copies": 1
+    }
+  },
+  "edition": {
+    "mode": "unique",
+    "size": 1
+  }
+}

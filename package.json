@@ -1,0 +1,35 @@
+{
+  "name": "mochi",
+  "version": "0.1.0",
+  "description": "Monorepo for the Mochi desktop, extensions, and on-chain tooling.",
+  "author": "Mochi <hello@mochi.ai>",
+  "scripts": {
+    "launch": "./launch.sh",
+    "start": "./scripts/start.sh",
+    "chain": "./scripts/chain.sh",
+    "chain:stop": "./scripts/chain.sh stop",
+    "chain:logs": "./scripts/chain.sh logs",
+    "chain:status": "./scripts/chain.sh status",
+    "deploy": "./scripts/deploy.sh",
+    "deploy:local": "./scripts/deploy.sh local",
+    "deploy:testnet": "./scripts/deploy.sh fuji",
+    "deploy:testnet:publish": "SYNC_VERCEL=1 ./scripts/deploy.sh fuji",
+    "deploy:mainnet": "./scripts/deploy.sh mainnet",
+    "deploy:mainnet:publish": "SYNC_VERCEL=1 ./scripts/deploy.sh mainnet",
+    "test:contracts": "cd foundry && forge test",
+    "test:networks": "./scripts/test-networks.sh",
+    "test:local": "./scripts/test-networks.sh --local-only",
+    "vercel:env:testnet": "./scripts/vercel-env-sync.sh fuji production",
+    "vercel:env:mainnet": "./scripts/vercel-env-sync.sh mainnet production",
+    "sync-runtime-core": "node scripts/sync-runtime-core.js",
+    "sync-personalities": "node scripts/sync-runtime-core.js"
+  },
+  "packageManager": "pnpm@10.24.0",
+  "dependencies": {
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "electron": "^35.7.5",
+    "electron-builder": "^26.8.1"
+  }
+}

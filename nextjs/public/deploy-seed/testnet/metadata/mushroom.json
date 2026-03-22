@@ -1,0 +1,28 @@
+{
+  "name": "Mochi Placeholder - mushroom",
+  "description": "Auto-generated placeholder NFT metadata for testnet deploy showcase using the mushroom idle sprite.",
+  "image": "ipfs://QmT5EHUDJ42hfa7wHPuDySF7pq5wiq4VFyzArxPd9NNFL9",
+  "external_url": "https://www.mochi.dev/marketplace",
+  "attributes": [
+    { "trait_type": "placeholder", "value": "true" },
+    { "trait_type": "network", "value": "testnet" },
+    { "trait_type": "character", "value": "mushroom" },
+    { "trait_type": "sprite_state", "value": "idle" },
+    { "trait_type": "unlock_type", "value": "swap_complete" },
+    { "trait_type": "edition_mode", "value": "unique" },
+    { "trait_type": "edition_size", "value": "1" }
+  ],
+  "properties": {
+    "mochi": {
+      "schema": "mochi_nft_v1",
+      "unlocksAppearance": true,
+      "spritesBaseUri": "https://www.mochi.dev/api/site-mochi/sprite/mushroom",
+      "editionMode": "unique",
+      "copies": 1
+    }
+  },
+  "edition": {
+    "mode": "unique",
+    "size": 1
+  }
+}

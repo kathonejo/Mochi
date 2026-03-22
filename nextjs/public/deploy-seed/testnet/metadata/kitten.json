@@ -1,0 +1,25 @@
+{
+  "name": "Mochi Placeholder - kitten",
+  "description": "Auto-generated placeholder NFT metadata for testnet deploy showcase using the kitten idle sprite.",
+  "image": "ipfs://QmamAsVSeM5NFpMm9U8FkGu3hf6qGyQBamonXrUMqDQLF2",
+  "external_url": "https://www.mochi.dev/marketplace",
+  "attributes": [
+    { "trait_type": "placeholder", "value": "true" },
+    { "trait_type": "network", "value": "testnet" },
+    { "trait_type": "character", "value": "kitten" },
+    { "trait_type": "sprite_state", "value": "idle" },
+    { "trait_type": "edition_mode", "value": "unique" },
+    { "trait_type": "edition_size", "value": "1" }
+  ],
+  "properties": {
+    "mochi": {
+      "schema": "mochi_nft_v1",
+      "editionMode": "unique",
+      "copies": 1
+    }
+  },
+  "edition": {
+    "mode": "unique",
+    "size": 1
+  }
+}

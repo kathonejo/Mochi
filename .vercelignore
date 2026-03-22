@@ -1,0 +1,18 @@
+dist/
+**/.next/
+**/.next.*/
+**/node_modules/
+
+# Exclude only repo-root utility folders; keep nextjs assets intact
+# runtime-core/ must NOT be excluded: the site mochi catalog API reads
+# character sprites and personality files from ../../runtime-core at runtime
+desktop/
+chrome-extension/
+firefox-extension/
+animation-reference/
+/scripts/
+legacy/
+mochi-eth/
+.chain/
+.deploy-env/
+foundry/

@@ -1,0 +1,71 @@
+{
+  "manifest_version": 3,
+  "name": "Mochi",
+  "version": "1.0.0",
+  "description": "Animated AI pets for your browser. Chat with a mochi or connect your own agent.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "mochi@mochi.dev",
+      "strict_min_version": "109.0"
+    }
+  },
+  "permissions": ["storage", "tabs", "scripting"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mochi.dev/*",
+        "https://www.mochi.dev/*"
+      ],
+      "js": ["mochi-shared.js", "content.js"],
+      "css": ["style.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://mochi.dev/*",
+        "https://www.mochi.dev/*"
+      ],
+      "js": ["dapp_content_script.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "host_permissions": [
+    "https://mochi.dev/*",
+    "https://www.mochi.dev/*",
+    "https://openrouter.ai/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*",
+    "ws://127.0.0.1/*",
+    "ws://localhost/*"
+  ],
+  "options_page": "onboarding-installed.html",
+  "optional_permissions": [
+    "http://*/*",
+    "https://*/*",
+    "ws://*/*",
+    "wss://*/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["characters/**", "assets/mochi-success.wav", "assets/mochi-error.wav", "assets/sounds/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

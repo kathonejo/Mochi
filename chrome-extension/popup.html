@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mochi</title>
+  <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+<body>
+  <header class="popup-header">
+    <span class="logo">Mochi</span>
+    <div class="popup-subtitle" id="popup-subtitle">Your AI mascot orchestrator</div>
+    <div class="popup-stats" id="popup-stats"></div>
+  </header>
+  <section class="security-lock-banner" id="security-lock-banner">
+    <div class="security-lock-title" id="security-lock-title">Configuration locked</div>
+    <div class="security-lock-text" id="security-lock-text">Enter your password to unlock and use features.</div>
+  </section>
+  <section class="onboarding-banner" id="onboarding-banner">
+    <div class="onboarding-header">
+      <div class="onboarding-title" id="onboarding-title">Welcome to Mochi</div>
+      <button class="onboarding-close" id="onboarding-close" aria-label="Close">×</button>
+    </div>
+    <div class="onboarding-body" id="onboarding-body"></div>
+    <div class="onboarding-actions">
+      <button class="onboarding-cta" id="onboarding-cta">Configure AI Brain</button>
+      <div class="onboarding-hint" id="onboarding-hint">You can add more later with the + button.</div>
+    </div>
+  </section>
+
+  <section class="controls-section">
+    <div class="control-group call-back-group">
+      <div class="dismiss-call-row">
+        <button class="call-back-btn dismiss-btn" id="dismiss-all-btn">Dismiss All</button>
+        <button class="call-back-btn" id="call-back-btn">Call All</button>
+      </div>
+      <div id="mochi-dismiss-call-list" class="mochi-dismiss-call-list"></div>
+    </div>
+    <div class="control-group presence-group" id="presence-group">
+      <div class="presence-panel">
+        <div class="presence-heading">
+          <span id="presence-title">Visibility</span>
+        </div>
+        <label class="toggle-row" id="all-sites-toggle-row">
+          <span class="toggle-label" id="label-enabled-all-sites">Enabled on all sites</span>
+          <input type="checkbox" id="all-sites-toggle" class="toggle-checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row" id="page-toggle-row">
+          <span class="toggle-label" id="label-enabled-page">Enabled on this site</span>
+          <input type="checkbox" id="page-toggle" class="toggle-checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+        <div class="global-status" id="global-status"></div>
+      </div>
+    </div>
+
+    <div class="control-group" id="mochi-config-group">
+      <div class="section-header">
+        <h3 id="mochi-section-title">Mochis</h3>
+      </div>
+      <div class="security-status config-lock-hint" id="mochi-lock-hint"></div>
+      <div class="ai-hint" id="mochi-limit-hint">Up to 5 mochis on screen</div>
+      <div class="mochi-selector-row">
+        <button class="mochi-add-btn" id="add-mochi-btn" aria-label="Add mochi">+</button>
+        <div class="mochi-selector" id="mochi-selector"></div>
+      </div>
+      <div id="mochi-empty" class="mochi-empty"></div>
+      <div id="mochi-list" class="mochi-list"></div>
+    </div>
+
+    <div class="control-group" id="nft-collection-group">
+      <div class="section-header">
+        <h3 id="nft-section-title">NFT Mochis</h3>
+      </div>
+      <div class="ai-hint" id="nft-hint"></div>
+      <div id="nft-list" class="nft-list"></div>
+      <div class="popup-links">
+        <a href="https://www.mochi.dev/collection" target="_blank" class="popup-link marketplace-link">
+          <span id="link-nft-collection">Manage Collection</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <h3 id="security-title">Security</h3>
+      <div class="security-box">
+        <div class="security-status" id="security-hint"></div>
+        <label class="toggle-row mini-toggle">
+          <span class="toggle-label" id="masterkey-label">Protect keys with master key</span>
+          <input type="checkbox" id="masterkey-toggle" class="toggle-checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row mini-toggle" id="autolock-row">
+          <span class="toggle-label" id="autolock-label">Auto-lock</span>
+          <input type="checkbox" id="autolock-toggle" class="toggle-checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+        <div class="security-input-row" id="autolock-minutes-row">
+          <input type="range" id="autolock-minutes" class="ai-range" min="5" max="120" step="5">
+          <span class="security-inline-label" id="autolock-minutes-label">30 min</span>
+        </div>
+        <div class="security-input-row">
+          <input type="password" id="masterkey-input" class="ai-input" placeholder="Master key">
+          <button class="control-btn mini-btn" id="masterkey-action-btn">Unlock</button>
+        </div>
+        <div class="security-input-row" id="masterkey-confirm-row">
+          <input type="password" id="masterkey-confirm" class="ai-input" placeholder="Confirm password">
+          <button class="control-btn mini-btn" id="masterkey-save-btn">Save</button>
+        </div>
+        <div class="security-actions-row" id="masterkey-actions-row">
+          <button class="control-btn mini-btn" id="masterkey-change-btn">Change password</button>
+        </div>
+        <div class="security-status" id="masterkey-status"></div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="ai-label" id="popup-theme-label">Theme</label>
+      <select class="ai-select" id="popup-theme-select"></select>
+    </div>
+
+    <div class="control-group">
+      <label class="ai-label" id="popup-language-label">Language</label>
+      <select class="ai-select" id="popup-language-select"></select>
+    </div>
+
+    <div class="control-group">
+      <label class="ai-label" id="ui-text-scale-label">UI Text Size</label>
+      <select class="ai-select" id="ui-text-scale-select"></select>
+      <div class="ai-hint" id="ui-text-scale-note">Ctrl/Cmd + or - to resize, Ctrl/Cmd + 0 to reset.</div>
+    </div>
+
+    <div class="control-group">
+      <div class="popup-links footer-links">
+        <a href="https://www.mochi.dev/help#feedback" target="_blank" class="popup-link feedback-link">
+          <span id="link-feedback">Feedback</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+        <a href="https://www.mochi.dev/privacy" target="_blank" class="popup-link privacy-link">
+          <span id="link-privacy">Privacy</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>

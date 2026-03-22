@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-02-23T19:03:37Z",
+  "network": "local",
+  "characters": [
+    { "character": "blob", "image": "http://localhost:3000/deploy-seed/local/sprites/blob-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/blob.json" }
+    ,
+    { "character": "bunny", "image": "http://localhost:3000/deploy-seed/local/sprites/bunny-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/bunny.json" }
+    ,
+    { "character": "egg", "image": "http://localhost:3000/deploy-seed/local/sprites/egg-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/egg.json" }
+    ,
+    { "character": "ghost", "image": "http://localhost:3000/deploy-seed/local/sprites/ghost-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/ghost.json" }
+    ,
+    { "character": "kitten", "image": "http://localhost:3000/deploy-seed/local/sprites/kitten-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/kitten.json" }
+    ,
+    { "character": "lobster", "image": "http://localhost:3000/deploy-seed/local/sprites/lobster-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/lobster.json" }
+    ,
+    { "character": "mushroom", "image": "http://localhost:3000/deploy-seed/local/sprites/mushroom-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/mushroom.json" }
+    ,
+    { "character": "penguin", "image": "http://localhost:3000/deploy-seed/local/sprites/penguin-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/penguin.json" }
+    ,
+    { "character": "mochi", "image": "http://localhost:3000/deploy-seed/local/sprites/mochi-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/mochi.json" }
+  ]
+}

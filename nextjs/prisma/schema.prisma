@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model ArtistProfile {
+  walletAddress                  String   @id
+  displayName                    String   @default("")
+  avatarUrl                      String   @default("")
+  bannerUrl                      String   @default("")
+  bio                            String   @default("")
+  languages                      Json     @default("[]")
+  styleTags                      Json     @default("[]")
+  socialLinks                    Json     @default("{}")
+  artistEnabled                  Boolean  @default(false)
+  commissionEnabled              Boolean  @default(false)
+  acceptingNewClients            Boolean  @default(true)
+  basePriceAvax                   String   @default("")
+  basePriceUsdc                  String   @default("")
+  turnaroundDaysMin              Int?
+  turnaroundDaysMax              Int?
+  slotsTotal                     Int?
+  slotsOpen                      Int?
+  preferredAuctionDurationHours  Int?     @default(24)
+  reportCount                    Int      @default(0)
+  visibilityStatus               String   @default("active")
+  createdAt                      DateTime @default(now())
+  updatedAt                      DateTime @updatedAt
+
+  @@index([visibilityStatus])
+  @@index([updatedAt])
+  @@map("artist_profiles")
+}
+
+model ArtistAuthChallenge {
+  id        String   @id
+  wallet    String
+  message   String
+  createdAt DateTime
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  @@index([wallet])
+  @@index([expiresAt])
+  @@map("artist_auth_challenges")
+}
+
+model ArtistAuthSession {
+  token            String   @id
+  wallet           String
+  createdAt        DateTime
+  expiresAt        DateTime
+  verificationMode String
+
+  @@index([wallet])
+  @@index([expiresAt])
+  @@map("artist_auth_sessions")
+}
+
+model MarketplaceReport {
+  id             String   @id
+  targetType     String
+  targetId       String
+  reporterWallet String?
+  reason         String
+  details        String
+  createdAt      DateTime
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("marketplace_reports")
+}
+
+model OpenClawPairingRequest {
+  code      String   @id
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+  @@map("openclaw_pairing_requests")
+}
+
+model OpenClawPairingCode {
+  code            String   @id
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+  gatewayUrl      String
+  gatewayTokenEnc String
+  agentName       String
+  maxClaims       Int      @default(1)
+  claimsUsed      Int      @default(0)
+
+  @@index([expiresAt])
+  @@map("openclaw_pairing_codes")
+}
+
+model OpenClawPairingSession {
+  tokenHash       String   @id
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+  gatewayUrl      String
+  gatewayTokenEnc String
+  agentName       String
+
+  @@index([expiresAt])
+  @@map("openclaw_pairing_sessions")
+}

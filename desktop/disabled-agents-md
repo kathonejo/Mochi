@@ -1,0 +1,86 @@
+# Desktop Build Instructions
+
+## Runtime core & packaging
+
+- The canonical shared runtime data lives in `runtime-core/` at repo root (`characters/`, `personalities/`, `assets/`).
+- Desktop consumes generated mirrors in `desktop/renderer/{characters,personalities,assets}`. Do not edit those directly for long-term changes; edit `runtime-core/` then sync.
+- Run `npm run sync-runtime-core` (or the root `./build.sh` wrapper) before building or packaging so desktop and browser artifacts use the same source data.
+- `desktop/scripts/build.sh` and `desktop/build-portable.sh` now run the sync step automatically before invoking `electron-builder`.
+
+## Quick Build (Recommended)
+
+Run the build script to create a new portable exe:
+
+```bash
+cd /home/lulox/Mochi/desktop
+./build-portable.sh
+```
+
+Or manually:
+
+```bash
+cd /home/lulox/Mochi/desktop
+rm -f dist/*.exe && npx electron-builder --win
+```
+
+**Expected time:** 3-5 minutes
+
+## Build Process
+
+The build creates a Nullsoft Installer self-extracting portable exe (`Mochi-Desktop-Portable-0.1.0.exe`).
+
+## Verification
+
+After build completes, verify the exe was created:
+
+```bash
+ls -la /home/lulox/Mochi/desktop/dist/Mochi-Desktop-Portable-0.1.0.exe
+file /home/lulox/Mochi/desktop/dist/Mochi-Desktop-Portable-0.1.0.exe
+```
+
+Expected output: `PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft Installer self-extracting archive`
+
+## When to Build
+
+- **AFTER every successful code change** in `desktop/renderer/` or `desktop/main.js`
+- After modifying settings UI (`settings.html`, `settings.css`, `settings.js`)
+- After modifying the overlay (`overlay.js`)
+- After modifying the main process (`main.js`)
+
+## When NOT to Build
+
+- If you need clarification from the user before proceeding
+- If the build command fails (document the error and try alternative approach)
+- If you're just reading files to understand the codebase
+
+## Build Failure Troubleshooting
+
+If `npx electron-builder --win` fails:
+
+1. **Check if electron-builder is installed:** `npm list electron-builder`
+2. **Try reinstalling:** `npm install electron-builder@24.13.3 --save-dev`
+3. **Clear cache and retry:** `rm -rf node_modules/.cache && npx electron-builder --win`
+4. **Try with explicit project dir:** `npx electron-builder --win --projectDir .`
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `renderer/overlay.js` | Mochi rendering, physics, behavior |
+| `renderer/settings.html` | Settings UI layout |
+| `renderer/settings.css` | Settings UI styling |
+| `renderer/settings.js` | Settings UI logic |
+| `main.js` | Electron main process, config store |
+| `../runtime-core/` | Canonical source for shared characters/personalities/assets |
+| `renderer/characters/` | Generated character mirror consumed by desktop runtime |
+| `renderer/personalities/` | Generated personality mirror consumed by desktop runtime |
+| `renderer/assets/` | Generated shared audio asset mirror |
+
+## Testing the Build
+
+Copy the portable exe to a Windows machine and verify:
+1. Mochis appear on screen
+2. They fall and start walking
+3. Click opens chat, double-click makes them jump
+4. Settings window opens and works
+5. Adding/removing mochis works

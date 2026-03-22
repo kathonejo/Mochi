@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mochi Configuration</title>
+  <style>
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 20px;
+      min-height: 100vh;
+      background: linear-gradient(to bottom, #F6FB8E 0%, #FFB7FF 50%, #70A4DE 100%);
+      color: #2a1f4e;
+    }
+    h1 {
+      color: #2a1f4e;
+      font-weight: 700;
+    }
+    p {
+      color: rgba(42, 31, 78, 0.8);
+      line-height: 1.6;
+      margin: 16px 0;
+    }
+    .field {
+      margin: 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 280px;
+    }
+    label {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    select {
+      padding: 10px 12px;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(42, 31, 78, 0.25);
+      font-size: 14px;
+      background: rgba(255,255,255,0.9);
+      color: #2a1f4e;
+    }
+    .hint {
+      margin: 0;
+      font-size: 12px;
+      color: rgba(42, 31, 78, 0.7);
+    }
+    #go-to-dapp {
+      padding: 12px 24px;
+      background: #2a1f4e;
+      border: none;
+      border-radius: 1rem;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    #go-to-dapp:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(42, 31, 78, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <h1>Mochi Configuration Page</h1>
+  <p>This is where you can configure your Mochi extension. Use the button below to open the Mochi configuration page.</p>
+  <div class="field">
+    <label for="ui-text-scale-select">UI Text Size</label>
+    <select id="ui-text-scale-select"></select>
+    <p class="hint" id="ui-text-scale-hint">Ctrl/Cmd + or - to resize, Ctrl/Cmd + 0 to reset.</p>
+  </div>
+  <button id="go-to-dapp">Open Mochi Config Page</button>
+  <script src="config.js"></script>
+</body>
+</html>

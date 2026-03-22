@@ -1,0 +1,1227 @@
+.mochi-mascot {
+    position: fixed;
+    z-index: 99999;
+    pointer-events: auto;
+    transform-origin: center; /* For horizontal flipping */
+}
+
+/* --- Chat Bubble --- */
+.mochi-chat-bubble {
+    position: fixed;
+    z-index: 100000;
+    width: var(--chat-width, 280px);
+    height: var(--chat-height, 340px);
+    max-height: var(--chat-height, 420px);
+    min-width: 220px;
+    min-height: 160px;
+    border-radius: 16px;
+    border: 1px solid rgba(42, 31, 78, 0.12);
+    box-shadow: 0 8px 32px rgba(42, 31, 78, 0.18);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #2a1f4e;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(8px);
+    clip-path: inset(100% 0 0 0);
+    transition: clip-path 350ms cubic-bezier(0.4, 0, 0.2, 1),
+                transform 350ms cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 280ms ease,
+                visibility 0s 350ms;
+}
+
+.mochi-chat-bubble:not(.chat-front) {
+    cursor: pointer;
+}
+
+.mochi-chat-bubble.chat-front {
+    cursor: default;
+}
+
+/* Glass style (default) */
+.mochi-chat-bubble.chat-style-glass {
+    background: color-mix(in srgb, var(--chat-bg, #ffffff) 85%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Solid style */
+.mochi-chat-bubble.chat-style-solid {
+    background: var(--chat-bg, #ffffff);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Dark style */
+.mochi-chat-bubble.chat-style-dark {
+    background: color-mix(in srgb, var(--chat-bg, #140f28) 92%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #e0dce8;
+}
+
+.mochi-chat-bubble.visible {
+    visibility: visible;
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+    transition: clip-path 350ms cubic-bezier(0.4, 0, 0.2, 1),
+                transform 350ms cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 280ms ease,
+                visibility 0s 0s;
+}
+
+/* Speech bubble tail */
+.mochi-chat-bubble.chat-style-glass::after,
+.mochi-chat-bubble.chat-style-solid::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid var(--chat-bg, #ffffff);
+}
+
+.mochi-chat-bubble.chat-style-dark::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid var(--chat-bg, #140f28);
+}
+
+.mochi-chat-resize-handle {
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    opacity: 0.45;
+    background:
+        linear-gradient(315deg, transparent 55%, color-mix(in srgb, var(--chat-theme, #2a1f4e) 55%, transparent) 55% 65%, transparent 65%) no-repeat,
+        linear-gradient(315deg, transparent 65%, color-mix(in srgb, var(--chat-theme, #2a1f4e) 55%, transparent) 65% 75%, transparent 75%) no-repeat;
+    background-size: 100% 100%;
+}
+
+/* Chat header with close button */
+.mochi-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(42, 31, 78, 0.08);
+    flex-shrink: 0;
+}
+
+.mochi-chat-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.mochi-chat-header span {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--chat-theme, #2a1f4e);
+}
+
+.mochi-chat-meta {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(42, 31, 78, 0.55);
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mochi-chat-header-btns {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.mochi-chat-voice-quick {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: none;
+    background: #1159CC;
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 0.2s, box-shadow 0.2s, color 0.2s, transform 0.2s;
+    box-shadow: 0 0 0 1px #0c47a6;
+}
+
+.mochi-chat-voice-quick:hover {
+    background: #0c47a6;
+    transform: translateY(-1px);
+}
+
+.mochi-chat-voice-quick.active {
+    background: #1159CC;
+    box-shadow: 0 0 0 2px #0c47a6;
+    color: #ffffff;
+}
+
+.mochi-chat-openmic-toggle,
+.mochi-chat-tts-toggle,
+.mochi-chat-theme-toggle,
+.mochi-chat-relay-toggle,
+.mochi-chat-settings-toggle {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 28%, #ffffff);
+    border-radius: 10px;
+    font-size: 17px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+    line-height: 1;
+    padding: 0;
+    color: var(--chat-theme, #2a1f4e);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--chat-theme, #2a1f4e) 35%, transparent);
+}
+
+.mochi-chat-settings-toggle {
+    background: #FFCC66;
+    color: #0b0f14;
+    box-shadow: 0 0 0 1px #e3b657;
+}
+
+.mochi-chat-settings-toggle:hover {
+    background: #e3b657;
+    transform: translateY(-1px);
+}
+
+.mochi-chat-openmic-toggle:hover,
+.mochi-chat-tts-toggle:hover,
+.mochi-chat-theme-toggle:hover,
+.mochi-chat-relay-toggle:hover,
+.mochi-chat-settings-toggle:hover {
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 40%, #ffffff);
+    transform: translateY(-1px);
+}
+
+.mochi-chat-settings-toggle:hover {
+    background: #e3b657;
+}
+
+.mochi-chat-openmic-toggle.active {
+    background: rgba(220, 38, 38, 0.3);
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.45);
+    color: #ffffff;
+    animation: mochiMicPulse 1.4s ease-in-out infinite;
+}
+
+.mochi-chat-relay-toggle.active {
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 45%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--chat-theme, #2a1f4e) 45%, transparent);
+    color: #ffffff;
+}
+
+.mochi-chat-close {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: #FF6666;
+    border-radius: 10px;
+    color: #0b0f14;
+    font-size: 16px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 0.2s, transform 0.2s;
+    line-height: 1;
+    padding: 0;
+    box-shadow: 0 0 0 1px #e35757;
+}
+
+.mochi-chat-close:hover {
+    background: #e35757;
+    transform: translateY(-1px);
+}
+
+.mochi-chat-controls-panel {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    border: 1px solid rgba(42, 31, 78, 0.08);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--chat-bg, #ffffff) 94%, transparent);
+    box-shadow: 0 10px 22px rgba(42, 31, 78, 0.18);
+    position: absolute;
+    top: 46px;
+    right: 10px;
+    width: 200px;
+    z-index: 1;
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.mochi-chat-controls-panel.open {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.mochi-chat-control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 10px;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.mochi-chat-control-row:hover {
+    background: rgba(42, 31, 78, 0.08);
+}
+
+.chat-style-dark .mochi-chat-control-row:hover {
+    background: rgba(120, 140, 255, 0.12);
+}
+
+.mochi-chat-control-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--chat-theme, #2a1f4e);
+}
+
+.mochi-chat-font-select {
+    appearance: none;
+    border: 1px solid color-mix(in srgb, var(--chat-theme, #2a1f4e) 30%, transparent);
+    background: var(--chat-bg, #ffffff);
+    color: var(--chat-theme, #2a1f4e);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.mochi-chat-font-select option {
+    background: var(--chat-bg, #ffffff);
+    color: var(--chat-theme, #2a1f4e);
+}
+
+.mochi-chat-font-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--chat-theme, #2a1f4e) 25%, transparent);
+}
+
+.chat-style-dark .mochi-chat-font-select {
+    background: var(--chat-bg, #140f28);
+    color: var(--chat-theme, #e6f6ff);
+    border-color: color-mix(in srgb, var(--chat-theme, #e6f6ff) 35%, transparent);
+}
+
+.mochi-chat-theme-panel {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 12px 12px;
+    border-bottom: 1px solid rgba(42, 31, 78, 0.08);
+    background: color-mix(in srgb, var(--chat-bg, #ffffff) 90%, transparent);
+    flex-shrink: 0;
+}
+
+.mochi-chat-theme-panel.open {
+    display: flex;
+}
+
+.mochi-chat-theme-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.mochi-chat-theme-header-label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--chat-theme, #2a1f4e);
+}
+
+.mochi-chat-theme-close {
+    border: 1px solid #e35757;
+    background: #FF6666;
+    color: #0b0f14;
+    border-radius: 10px;
+    width: 26px;
+    height: 26px;
+    font-size: 18px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mochi-chat-theme-close:hover {
+    background: #e35757;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(227, 87, 87, 0.35);
+}
+
+.mochi-chat-theme-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.mochi-chat-theme-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--chat-theme, #2a1f4e);
+}
+
+.mochi-chat-theme-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mochi-theme-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.mochi-theme-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mochi-theme-circle:hover {
+    transform: translateY(-1px);
+}
+
+.mochi-theme-circle-outer {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(42, 31, 78, 0.2);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+}
+
+.mochi-theme-circle-outer.custom {
+    background: linear-gradient(135deg, #f472b6, #a78bfa, #22d3ee);
+    border: none;
+}
+
+.mochi-theme-circle-inner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(42, 31, 78, 0.2);
+    background: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    line-height: 1;
+}
+
+.mochi-theme-circle-inner.custom {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+.mochi-theme-circle-inner.emoji {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(42, 31, 78, 0.2);
+}
+
+.mochi-theme-circle.active {
+    box-shadow: 0 0 0 2px rgba(120, 140, 255, 0.35);
+}
+
+.mochi-theme-color-row {
+    display: flex;
+    gap: 8px;
+}
+
+.mochi-chat-theme-color,
+.mochi-chat-theme-bg {
+    width: 100%;
+    flex: 1;
+    height: 28px;
+    padding: 0;
+    border-radius: 10px;
+    border: 1px solid rgba(42, 31, 78, 0.2);
+    background: transparent;
+    cursor: pointer;
+}
+
+
+/* Messages area */
+.mochi-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 60px;
+    min-height: 0;
+    max-height: none;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+}
+
+.mochi-chat-messages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.mochi-chat-messages::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 25%, transparent);
+    border-radius: 2px;
+}
+
+/* Message bubbles */
+.mochi-chat-msg {
+    max-width: 85%;
+    padding: 7px 11px;
+    border-radius: 12px;
+    font-size: var(--chat-font-size, 13px);
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    cursor: text;
+}
+
+.mochi-chat-msg.user {
+    align-self: flex-end;
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chat-theme, #2a1f4e) 20%, transparent);
+    color: #2a1f4e;
+    border-bottom-right-radius: 4px;
+}
+
+.mochi-chat-msg.ai {
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(42, 31, 78, 0.08);
+    color: #2a1f4e;
+    border-bottom-left-radius: 4px;
+}
+
+.mochi-chat-msg.error {
+    align-self: center;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    color: #b91c1c;
+    font-size: 12px;
+    text-align: center;
+}
+
+.mochi-chat-msg a {
+    color: #2a1f4e;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.mochi-chat-md-paragraph {
+    margin: 0;
+}
+
+.mochi-chat-md-paragraph + .mochi-chat-md-paragraph {
+    margin-top: 8px;
+}
+
+.mochi-chat-inline-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.92em;
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 10%, #ffffff);
+    border: 1px solid color-mix(in srgb, var(--chat-theme, #2a1f4e) 18%, transparent);
+    border-radius: 6px;
+    padding: 1px 5px;
+}
+
+.mochi-chat-code-block {
+    margin-top: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--chat-theme, #2a1f4e) 22%, transparent);
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 6%, #f6f7fb);
+}
+
+.mochi-chat-code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-bottom: 1px solid color-mix(in srgb, var(--chat-theme, #2a1f4e) 18%, transparent);
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 12%, #ffffff);
+}
+
+.mochi-chat-code-lang {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: lowercase;
+    color: color-mix(in srgb, var(--chat-theme, #2a1f4e) 78%, #1c1431);
+}
+
+.mochi-chat-code-copy {
+    border: 1px solid color-mix(in srgb, var(--chat-theme, #2a1f4e) 30%, transparent);
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 18%, #ffffff);
+    color: color-mix(in srgb, var(--chat-theme, #2a1f4e) 84%, #1c1431);
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.mochi-chat-code-copy:hover {
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 24%, #ffffff);
+}
+
+.mochi-chat-code-pre {
+    margin: 0;
+    padding: 8px 10px;
+    max-height: 180px;
+    overflow: auto;
+}
+
+.mochi-chat-code {
+    display: block;
+    white-space: pre;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #1f1638;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+/* Input area */
+.mochi-chat-input-area {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    border-top: 1px solid rgba(42, 31, 78, 0.08);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.mochi-chat-input-area.listening {
+    animation: mochiInputGlow 1.4s ease-in-out infinite;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--chat-theme, #2a1f4e) 20%, transparent),
+        0 0 12px color-mix(in srgb, var(--chat-theme, #2a1f4e) 35%, transparent);
+}
+
+.mochi-chat-input-area.listening .mochi-chat-input {
+    border-color: color-mix(in srgb, var(--chat-theme, #2a1f4e) 45%, transparent);
+    background: color-mix(in srgb, #ffffff 88%, var(--chat-theme, #2a1f4e) 12%);
+}
+
+.mochi-chat-input {
+    flex: 1;
+    border: 1px solid rgba(42, 31, 78, 0.15);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: var(--chat-font-size, 13px);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #2a1f4e;
+    background: rgba(255, 255, 255, 0.7);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.mochi-chat-input::placeholder {
+    color: rgba(42, 31, 78, 0.35);
+}
+
+.mochi-chat-input:focus {
+    border-color: color-mix(in srgb, var(--chat-theme, #2a1f4e) 40%, transparent);
+}
+
+.mochi-chat-send {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--chat-theme, #2a1f4e);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.mochi-chat-send:hover {
+    filter: brightness(1.3);
+}
+
+/* --- Mic Button --- */
+.mochi-chat-mic {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--chat-theme, #2a1f4e);
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 16px;
+    text-shadow: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter 0.2s, transform 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.mochi-chat-mic:hover {
+    filter: brightness(1.3);
+    transform: translateY(-1px);
+}
+
+.mochi-chat-mic.listening {
+    background: rgba(220, 38, 38, 0.15);
+    border-color: rgba(220, 38, 38, 0.6);
+    color: #fff;
+    animation: mochiMicPulse 1.4s ease-in-out infinite;
+}
+
+.mochi-mic-autosend {
+    position: absolute;
+    right: 8px;
+    bottom: 46px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(42, 31, 78, 0.15);
+    border-radius: 12px;
+    font-size: 11px;
+    color: #2a1f4e;
+    box-shadow: 0 6px 18px rgba(42, 31, 78, 0.18);
+    z-index: 2;
+}
+
+.mochi-mic-autosend strong {
+    font-weight: 700;
+    color: var(--chat-theme, #2a1f4e);
+}
+
+.mochi-mic-autosend button {
+    border: none;
+    background: rgba(42, 31, 78, 0.12);
+    color: #2a1f4e;
+    border-radius: 10px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.mochi-mic-autosend button:hover {
+    background: rgba(42, 31, 78, 0.18);
+}
+
+.chat-style-dark .mochi-mic-autosend {
+    background: rgba(14, 18, 26, 0.96);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #e0dce8;
+}
+
+.chat-style-dark .mochi-mic-autosend button {
+    background: rgba(255, 255, 255, 0.12);
+    color: #e0dce8;
+}
+
+.chat-style-dark .mochi-mic-autosend button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes mochiMicPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(220, 38, 38, 0);
+    }
+}
+
+@keyframes mochiInputGlow {
+    0%, 100% {
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--chat-theme, #2a1f4e) 18%, transparent),
+            0 0 10px color-mix(in srgb, var(--chat-theme, #2a1f4e) 28%, transparent);
+    }
+    50% {
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--chat-theme, #2a1f4e) 30%, transparent),
+            0 0 16px color-mix(in srgb, var(--chat-theme, #2a1f4e) 45%, transparent);
+    }
+}
+
+.chat-style-dark .mochi-chat-mic {
+    background: var(--chat-theme, #2a1f4e);
+    color: #fff;
+}
+
+.chat-style-dark .mochi-chat-mic:hover {
+    filter: brightness(1.3);
+}
+
+.chat-style-dark .mochi-chat-mic.listening {
+    background: rgba(220, 38, 38, 0.2);
+    border-color: rgba(220, 38, 38, 0.5);
+}
+
+/* --- Thinking Bubble --- */
+.mochi-thinking-bubble {
+    position: fixed;
+    z-index: 100001;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 14px;
+    background: var(--chat-bg, rgba(255, 255, 255, 0.88));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--chat-theme, #2a1f4e) 15%, transparent);
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--chat-theme, #2a1f4e) 18%, transparent);
+}
+
+.mochi-thinking-bubble.visible {
+    display: flex;
+}
+
+/* Small tail for thinking bubble */
+.mochi-thinking-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--chat-bg, rgba(255, 255, 255, 0.88));
+}
+
+.mochi-thinking-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--chat-theme, #2a1f4e);
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: mochiBounce 1.2s ease-in-out infinite;
+}
+
+.mochi-thinking-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.mochi-thinking-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes mochiBounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.5;
+    }
+    30% {
+        transform: translateY(-6px);
+        opacity: 1;
+    }
+}
+
+/* --- Alert Bubble (unread message indicator) --- */
+.mochi-alert-bubble {
+    position: fixed;
+    z-index: 100001;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    background: var(--chat-bg, rgba(255, 255, 255, 0.96));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--chat-theme, #2a1f4e) 18%, transparent);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--chat-theme, #2a1f4e) 22%, transparent);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--chat-theme, #2a1f4e);
+    animation: mochiAlertPulse 1.6s ease-in-out infinite;
+}
+
+.mochi-alert-bubble.visible {
+    display: flex;
+}
+
+.mochi-alert-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--chat-bg, rgba(255, 255, 255, 0.92));
+}
+
+@keyframes mochiAlertPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.18);
+    }
+}
+
+/* --- Mic Countdown (open mic autosend) --- */
+.mochi-mic-countdown {
+    position: fixed;
+    z-index: 100001;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 34px;
+    padding: 0 10px;
+    background: var(--chat-bg, rgba(255, 255, 255, 0.96));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--chat-theme, #2a1f4e) 20%, transparent);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--chat-theme, #2a1f4e) 20%, transparent);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--chat-theme, #2a1f4e);
+}
+
+.mochi-mic-countdown.visible {
+    display: flex;
+}
+
+.mochi-mic-countdown::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--chat-bg, rgba(255, 255, 255, 0.92));
+}
+
+/* --- Inline Thinking (inside chat bubble) --- */
+.mochi-inline-thinking {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 7px 11px;
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(42, 31, 78, 0.08);
+    border-radius: 12px;
+    border-bottom-left-radius: 4px;
+}
+
+/* --- Dark bubble style overrides --- */
+.chat-style-dark .mochi-chat-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.chat-style-dark .mochi-chat-header span {
+    color: #e0dce8;
+}
+
+.chat-style-dark .mochi-chat-meta {
+    color: rgba(224, 220, 232, 0.55);
+}
+
+.chat-style-dark .mochi-chat-openmic-toggle,
+.chat-style-dark .mochi-chat-tts-toggle,
+.chat-style-dark .mochi-chat-theme-toggle,
+.chat-style-dark .mochi-chat-relay-toggle,
+.chat-style-dark .mochi-chat-settings-toggle {
+    background: rgba(255, 255, 255, 0.15);
+    color: #e6f6ff;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.chat-style-dark .mochi-chat-openmic-toggle:hover,
+.chat-style-dark .mochi-chat-tts-toggle:hover,
+.chat-style-dark .mochi-chat-theme-toggle:hover,
+.chat-style-dark .mochi-chat-relay-toggle:hover,
+.chat-style-dark .mochi-chat-settings-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.chat-style-dark .mochi-chat-voice-quick {
+    background: #1159CC;
+    color: #ffffff;
+    box-shadow: 0 0 0 1px #0c47a6;
+}
+
+.chat-style-dark .mochi-chat-voice-quick:hover {
+    background: #0c47a6;
+}
+
+.chat-style-dark .mochi-chat-voice-quick.active {
+    background: rgba(34, 197, 94, 0.75);
+    color: #0b0f14;
+}
+
+.chat-style-dark .mochi-chat-settings-toggle {
+    background: #FFCC66;
+    color: #0b0f14;
+    box-shadow: 0 0 0 1px #e3b657;
+}
+
+.chat-style-dark .mochi-chat-settings-toggle:hover {
+    background: #e3b657;
+}
+
+.chat-style-dark .mochi-chat-openmic-toggle.active {
+    background: rgba(220, 38, 38, 0.25);
+}
+
+.chat-style-dark .mochi-chat-relay-toggle.active {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.chat-style-dark .mochi-chat-close {
+    background: #FF6666;
+    color: #0b0f14;
+    box-shadow: 0 0 0 1px #e35757;
+}
+
+.chat-style-dark .mochi-chat-close:hover {
+    background: #e35757;
+}
+
+.chat-style-dark .mochi-chat-controls-panel {
+    border-color: rgba(224, 220, 232, 0.08);
+    background: color-mix(in srgb, var(--chat-bg, #140f28) 95%, transparent);
+    box-shadow: 0 10px 22px rgba(8, 6, 18, 0.5);
+}
+
+.chat-style-dark .mochi-chat-control-label {
+    color: #e0dce8;
+}
+
+.chat-style-dark .mochi-chat-theme-panel {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    background: color-mix(in srgb, var(--chat-bg, #140f28) 90%, transparent);
+}
+
+.chat-style-dark .mochi-chat-theme-label {
+    color: #e0dce8;
+}
+
+.chat-style-dark .mochi-chat-theme-color,
+.chat-style-dark .mochi-chat-theme-bg {
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.chat-style-dark .mochi-theme-circle-outer {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2) inset;
+}
+
+.chat-style-dark .mochi-theme-circle-inner {
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+
+.chat-style-dark .mochi-chat-msg.ai {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e0dce8;
+}
+
+.chat-style-dark .mochi-chat-msg.user {
+    color: #e0dce8;
+}
+
+.chat-style-dark .mochi-chat-msg a {
+    color: #c4b5fd;
+}
+
+.chat-style-dark .mochi-chat-input-area {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.chat-style-dark .mochi-chat-input-area.listening {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--chat-theme, #9f7aea) 25%, transparent),
+        0 0 14px color-mix(in srgb, var(--chat-theme, #9f7aea) 40%, transparent);
+}
+
+.chat-style-dark .mochi-chat-input {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #e0dce8;
+}
+
+.chat-style-dark .mochi-chat-input-area.listening .mochi-chat-input {
+    border-color: color-mix(in srgb, var(--chat-theme, #9f7aea) 55%, transparent);
+    background: color-mix(in srgb, rgba(14, 18, 26, 0.9) 85%, var(--chat-theme, #9f7aea) 15%);
+}
+
+.chat-style-dark .mochi-chat-input::placeholder {
+    color: rgba(224, 220, 232, 0.35);
+}
+
+.chat-style-dark .mochi-inline-thinking {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.chat-style-dark .mochi-thinking-dot {
+    background: #e0dce8;
+}
+
+/* --- Clipboard Integration: Message Copy Button --- */
+.mochi-chat-msg {
+    position: relative;
+}
+
+.mochi-chat-msg-copy {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 15%, #ffffff);
+    border: 1px solid color-mix(in srgb, var(--chat-theme, #2a1f4e) 25%, transparent);
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    z-index: 10;
+}
+
+.mochi-chat-msg:hover .mochi-chat-msg-copy {
+    opacity: 1;
+}
+
+.mochi-chat-msg-copy:hover {
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 25%, #ffffff);
+}
+
+.mochi-chat-msg-content {
+    padding-right: 28px;
+}
+
+/* --- Clipboard Integration: Inline Code Copy Button --- */
+.mochi-chat-inline-code-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.mochi-chat-inline-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.92em;
+    background: color-mix(in srgb, var(--chat-theme, #2a1f4e) 10%, #ffffff);
+    border: 1px solid color-mix(in srgb, var(--chat-theme, #2a1f4e) 18%, transparent);
+    border-radius: 6px;
+    padding: 1px 5px;
+}
+
+.mochi-chat-inline-copy {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    background: transparent;
+    border: none;
+    padding: 0 2px;
+    font-size: 11px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    line-height: 1;
+}
+
+.mochi-chat-inline-code-wrapper:hover .mochi-chat-inline-copy {
+    opacity: 1;
+}
+
+.mochi-chat-inline-copy:hover {
+    transform: scale(1.1);
+}
+
+/* Dark mode overrides for clipboard buttons */
+.chat-style-dark .mochi-chat-msg-copy {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.chat-style-dark .mochi-chat-msg-copy:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.chat-style-dark .mochi-chat-inline-code {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+}

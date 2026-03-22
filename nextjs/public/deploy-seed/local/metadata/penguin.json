@@ -1,0 +1,12 @@
+{
+  "name": "Mochi Placeholder - penguin",
+  "description": "Auto-generated placeholder NFT metadata for local deploy showcase using the penguin idle sprite.",
+  "image": "http://localhost:3000/deploy-seed/local/sprites/penguin-idle.png",
+  "external_url": "http://localhost:3000/marketplace",
+  "attributes": [
+    { "trait_type": "placeholder", "value": "true" },
+    { "trait_type": "network", "value": "local" },
+    { "trait_type": "character", "value": "penguin" },
+    { "trait_type": "sprite_state", "value": "idle" }
+  ]
+}

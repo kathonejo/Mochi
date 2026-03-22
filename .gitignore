@@ -1,0 +1,18 @@
+**/node_modules/
+**/dist/
+.chain/
+.deploy-env/
+
+# Release/download artifacts (must live in GitHub Releases, not git)
+*.exe
+*.AppImage
+*.zip
+mochi-ee/
+legacy/
+.codex-home/
+.opencode/plans/
+.vercel
+.env*.local
+foundry/.env
+foundry/cache/
+foundry/out/

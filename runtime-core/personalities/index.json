@@ -1,0 +1,37 @@
+[
+  {
+    "key": "chaotic",
+    "file": "chaotic.md",
+    "label": "Chaotic"
+  },
+  {
+    "key": "cozy",
+    "file": "cozy.md",
+    "label": "Cozy"
+  },
+  {
+    "key": "cryptid",
+    "file": "cryptid.md",
+    "label": "Cryptid"
+  },
+  {
+    "key": "egg",
+    "file": "egg.md",
+    "label": "Egg"
+  },
+  {
+    "key": "hype",
+    "file": "hype.md",
+    "label": "Hype Beast"
+  },
+  {
+    "key": "noir",
+    "file": "noir.md",
+    "label": "Noir"
+  },
+  {
+    "key": "philosopher",
+    "file": "philosopher.md",
+    "label": "Philosopher"
+  }
+]
