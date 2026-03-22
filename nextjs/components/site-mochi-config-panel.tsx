@@ -553,6 +553,7 @@ function ChatAppearanceFields({ compact = false }: { compact?: boolean } = {}) {
           ) : null}
         </div>
       </div>
+
     </div>
   );
 }
@@ -1806,12 +1807,12 @@ export function SiteMochiCompactConfigWindow({
   activeTab,
   fillHeight = true,
   onOpenMarketplace,
-  onOpenFuel,
+  onOpenWallet,
 }: {
   activeTab: ConfigPanelTab;
   fillHeight?: boolean;
   onOpenMarketplace?: () => void;
-  onOpenFuel?: () => void;
+  onOpenWallet?: () => void;
 }) {
   const { isSpanish } = useLanguage();
   const { theme, setTheme } = useTheme();
@@ -1863,6 +1864,40 @@ export function SiteMochiCompactConfigWindow({
                 );
               })}
             </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {isSpanish ? "Iconos del escritorio" : "Desktop icons"}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    { value: "desktop" as const, labelEn: "Desktop", labelEs: "Desktop", preview: "/icons-desktop/marketplace.svg" },
+                    { value: "dusk" as const, labelEn: "Dusk", labelEs: "Dusk", preview: "https://img.icons8.com/dusk/96/shopping-bag.png" },
+                  ] as const
+                ).map(({ value, labelEn, labelEs, preview }) => {
+                  const isActive = config.iconTheme === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => updateConfig({ iconTheme: value })}
+                      className={`flex items-center gap-3 rounded-2xl border px-3 py-2 transition-all ${
+                        isActive
+                          ? "border-[var(--brand-accent)] bg-[var(--brand-accent)]/15 text-foreground"
+                          : "border-border bg-card/65 text-foreground/85 hover:bg-card"
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={preview} alt="" className="h-6 w-6 shrink-0 object-contain" draggable={false} />
+                      <span className="min-w-0 truncate font-mono text-[10px] font-semibold uppercase tracking-[0.14em]">
+                        {isSpanish ? labelEs : labelEn}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         ) : null}
 
@@ -1870,16 +1905,49 @@ export function SiteMochiCompactConfigWindow({
 
         {activeTab === "chat" ? (
           <div className="grid gap-4">
-            {onOpenFuel ? (
-              <button
-                type="button"
-                onClick={onOpenFuel}
-                className="flex w-full items-center justify-between rounded-xl bg-amber-500 px-4 py-3 text-left text-xs font-semibold text-black transition hover:bg-amber-400"
-              >
-                <span>{isSpanish ? "Hosting & Créditos de IA" : "Hosting & AI Credits"}</span>
-                <span className="opacity-60">→</span>
-              </button>
-            ) : null}
+            {/* Hosting & Credits inline card */}
+            <div className="rounded-2xl border border-border bg-white/[0.04] p-4">
+              <div className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                {isSpanish ? "Proveedor de créditos" : "Credits & Hosting"}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-col rounded-xl border border-border bg-white/[0.04] p-3">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Hosting</span>
+                  <span className="mt-1 text-base font-bold text-foreground">$20</span>
+                  <span className="text-[10px] text-muted-foreground">{isSpanish ? "/ mes · USDC" : "/ mo · USDC"}</span>
+                  <span className="mt-2 text-[9px] text-muted-foreground/60 leading-relaxed">
+                    {isSpanish ? "Agente activo 24/7" : "Agent alive 24/7"}
+                  </span>
+                </div>
+                <div className="col-span-2 flex flex-col rounded-xl border border-border bg-white/[0.04] p-3">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">AI Credits</span>
+                  <div className="mt-1 flex gap-1">
+                    {["$2", "$5", "$10"].map((amt) => (
+                      <div key={amt} className="flex-1 rounded-lg border border-border bg-white/5 py-1 text-center text-[11px] font-semibold text-foreground/40">
+                        {amt}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="mt-2 text-[9px] text-muted-foreground/60">
+                    {isSpanish ? "Almacenamiento · Memoria del agente" : "Storage · Agent memory"}
+                  </span>
+                  <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-amber-400/20 bg-amber-400/8 px-2 py-0.5 text-[9px] font-semibold text-amber-300 w-fit">
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-amber-400" />
+                    {isSpanish ? "Próximamente" : "Coming soon"}
+                  </div>
+                </div>
+              </div>
+              {onOpenWallet ? (
+                <button
+                  type="button"
+                  onClick={onOpenWallet}
+                  className="mt-3 flex w-full items-center justify-between rounded-xl bg-[var(--brand-accent)] px-4 py-2.5 text-left text-xs font-bold text-white shadow-sm transition hover:opacity-90"
+                >
+                  <span>{isSpanish ? "Wallet del agente" : "Agent wallet"}</span>
+                  <span>→</span>
+                </button>
+              ) : null}
+            </div>
             <ProviderFields compact />
           </div>
         ) : null}

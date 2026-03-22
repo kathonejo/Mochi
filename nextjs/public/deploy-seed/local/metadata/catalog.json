@@ -18,6 +18,6 @@
     ,
     { "character": "penguin", "image": "http://localhost:3000/deploy-seed/local/sprites/penguin-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/penguin.json" }
     ,
-    { "character": "mochi", "image": "http://localhost:3000/deploy-seed/local/sprites/mochi-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/mochi.json" }
+    { "character": "shimeji", "image": "http://localhost:3000/deploy-seed/local/sprites/shimeji-idle.png", "metadata": "http://localhost:3000/deploy-seed/local/metadata/shimeji.json" }
   ]
 }

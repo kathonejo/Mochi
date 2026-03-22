@@ -12,7 +12,7 @@ import {
 } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Zap } from "lucide-react";
+import { Copy, Check, Zap } from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
 import { useSiteMochi } from "@/components/site-mochi-provider";
 import { useTheme, type Theme } from "@/components/theme-provider";
@@ -26,6 +26,49 @@ import {
 import { SITE_DESKTOP_OPEN_WINDOW_EVENT, type SiteDesktopWindowKey } from "@/lib/site-desktop-window";
 
 const ICONS8_DUSK = "https://img.icons8.com/dusk/96";
+const ICONS_DESKTOP = "/icons-desktop";
+
+type DesktopShortcutIconKey =
+  | "personalize"
+  | "marketplace"
+  | "creator"
+  | "guide"
+  | "wallet"
+  | "help"
+  | "download"
+  | "soul"
+  | "config"
+  | "memories";
+
+const ICON_DESKTOP_MAP: Record<DesktopShortcutIconKey, string> = {
+  personalize: `${ICONS_DESKTOP}/appearance.svg`,
+  marketplace: `${ICONS_DESKTOP}/marketplace.svg`,
+  creator: `${ICONS_DESKTOP}/create.svg`,
+  guide: `${ICONS_DESKTOP}/guide.svg`,
+  wallet: `${ICONS_DESKTOP}/wallet.svg`,
+  help: `${ICONS_DESKTOP}/help.svg`,
+  download: `${ICONS_DESKTOP}/download.svg`,
+  soul: `${ICONS_DESKTOP}/soul.svg`,
+  config: `${ICONS_DESKTOP}/config.svg`,
+  memories: `${ICONS_DESKTOP}/memories.svg`,
+};
+
+const ICON_DUSK_MAP: Record<DesktopShortcutIconKey, string> = {
+  personalize: `${ICONS8_DUSK}/paint-palette.png`,
+  marketplace: `${ICONS8_DUSK}/shopping-bag.png`,
+  creator: `${ICONS8_DUSK}/unicorn.png`,
+  guide: `${ICONS8_DUSK}/book.png`,
+  wallet: `${ICONS8_DUSK}/wallet.png`,
+  help: `${ICONS8_DUSK}/help.png`,
+  download: `${ICONS8_DUSK}/download.png`,
+  soul: `${ICONS8_DUSK}/crown.png`,
+  config: `${ICONS8_DUSK}/settings.png`,
+  memories: `${ICONS8_DUSK}/camera.png`,
+};
+
+function getShortcutIconUrl(key: DesktopShortcutIconKey, iconTheme: string): string {
+  return iconTheme === "dusk" ? ICON_DUSK_MAP[key] : ICON_DESKTOP_MAP[key];
+}
 
 type DesktopConfigShortcutProps = {
   shortcutKey: DesktopWindowKey;
@@ -44,7 +87,8 @@ type DesktopWindowKey =
   | "guide"
   | "help"
   | "download"
-  | "fuel";
+  | "fuel"
+  | "wallet";
 
 type StoredChatMessage = {
   role: "user" | "assistant";
@@ -103,7 +147,7 @@ const DESKTOP_SHORTCUT_KEYS: DesktopWindowKey[] = [
   "marketplace",
   "creator",
   "guide",
-  "fuel",
+  "wallet",
   "help",
   "download",
   "soul",
@@ -128,12 +172,12 @@ const SITE_MOCHI_CHAT_HISTORY_UPDATED_EVENT = "site-mochi:chat-history-updated";
 const DESKTOP_DEFAULT_SHORTCUT_ROWS: DesktopWindowKey[][] = [
   ["personalize", "marketplace", "creator", "guide"],
   ["soul", "memories"],
-  ["config", "fuel", "help", "download"],
+  ["config", "wallet", "help", "download"],
 ];
 const MOBILE_SHORTCUT_ROWS: DesktopWindowKey[][] = [
   ["personalize", "marketplace", "creator", "guide"],
   ["soul", "memories"],
-  ["config", "fuel", "help", "download"],
+  ["config", "wallet", "help", "download"],
 ];
 
 function clampDesktopWindowPosition(
@@ -604,10 +648,10 @@ function DesktopPersonalizeWindow({
 
 function DesktopConfigWindow({
   isSpanish,
-  onOpenFuel,
+  onOpenWallet,
 }: {
   isSpanish: boolean;
-  onOpenFuel?: () => void;
+  onOpenWallet?: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<"chat" | "tools" | "onchain" | "sound">("chat");
   const tabs: Array<{ key: "chat" | "tools" | "onchain" | "sound"; label: string }> = [
@@ -639,7 +683,7 @@ function DesktopConfigWindow({
         })}
       </div>
       <div className="min-h-0 flex-1 overflow-hidden">
-        <SiteMochiCompactConfigWindow activeTab={activeTab} fillHeight onOpenFuel={onOpenFuel} />
+        <SiteMochiCompactConfigWindow activeTab={activeTab} fillHeight onOpenWallet={onOpenWallet} />
       </div>
     </section>
   );
@@ -668,7 +712,7 @@ function DesktopFuelWindow({ isSpanish }: { isSpanish: boolean }) {
           <button
             type="button"
             disabled
-            className="mt-5 w-full cursor-not-allowed rounded-xl bg-amber-500 py-2.5 text-xs font-semibold text-black opacity-50"
+            className="mt-5 w-full cursor-not-allowed rounded-xl bg-black py-2.5 text-xs font-semibold text-amber-400 border border-amber-400/40"
           >
             {t("Coming soon", "Próximamente")}
           </button>
@@ -700,7 +744,7 @@ function DesktopFuelWindow({ isSpanish }: { isSpanish: boolean }) {
           <button
             type="button"
             disabled
-            className="mt-5 w-full cursor-not-allowed rounded-xl bg-amber-500 py-2.5 text-xs font-semibold text-black opacity-50"
+            className="mt-5 w-full cursor-not-allowed rounded-xl bg-black py-2.5 text-xs font-semibold text-amber-400 border border-amber-400/40"
           >
             {t("Coming soon", "Próximamente")}
           </button>
@@ -728,6 +772,127 @@ function DesktopFuelWindow({ isSpanish }: { isSpanish: boolean }) {
               {t("In development", "En desarrollo")}
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesktopWalletWindow({ isSpanish, onOpenOnchain }: { isSpanish: boolean; onOpenOnchain?: () => void }) {
+  const t = (en: string, es: string) => (isSpanish ? es : en);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText("0x0000...0000");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <div className="flex h-full flex-col overflow-auto bg-card/72 text-foreground">
+      {/* Wallet address */}
+      <div className="border-b border-border/50 px-6 py-5">
+        <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {t("Agent address", "Dirección del agente")}
+        </div>
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-white/[0.035] px-4 py-3">
+          <span className="flex-1 font-mono text-xs text-foreground/40 select-all">
+            0x0000...0000
+          </span>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-border bg-white/5 text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
+            title={t("Copy address", "Copiar dirección")}
+          >
+            {copied ? (
+              <Check className="h-3 w-3 text-green-400" strokeWidth={2.5} />
+            ) : (
+              <Copy className="h-3 w-3" strokeWidth={2} />
+            )}
+          </button>
+        </div>
+        <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-400/20 bg-amber-400/8 px-2.5 py-0.5 text-[10px] font-semibold text-amber-300">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+          {t("Coming soon", "Próximamente")}
+        </div>
+      </div>
+
+      <div className="grid gap-4 p-6 sm:grid-cols-2">
+        {/* Bitte AI Multichain */}
+        <div className="flex flex-col rounded-2xl border border-border bg-white/[0.04] p-5">
+          <div className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            {t("Multichain execution", "Ejecución multichain")}
+          </div>
+          <div className="flex-1">
+            <div className="text-sm font-semibold text-foreground">Bitte AI</div>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground/80">
+              {t(
+                "Bitte AI enables your agent to execute multichain transactions using NEAR intents — signing and sending on-chain actions across EVM networks and NEAR from a single agent wallet.",
+                "Bitte AI permite que tu agente ejecute transacciones multichain con intents de NEAR — firmando y enviando acciones on-chain en redes EVM y NEAR desde una sola wallet de agente.",
+              )}
+            </p>
+          </div>
+          {onOpenOnchain ? (
+            <button
+              type="button"
+              onClick={onOpenOnchain}
+              className="mt-4 flex w-full items-center justify-between rounded-xl border border-border bg-white/5 px-3 py-2 text-left text-[11px] font-semibold text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
+            >
+              <span>{t("Configure in Onchain tab", "Configurar en pestaña Onchain")}</span>
+              <span className="opacity-50">→</span>
+            </button>
+          ) : null}
+        </div>
+
+        {/* Agent earnings / Automaton */}
+        <div className="flex flex-col rounded-2xl border border-border bg-white/[0.04] p-5">
+          <div className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            {t("Agent earnings", "Ganancias del agente")}
+          </div>
+          <div className="flex-1">
+            <p className="text-xs leading-relaxed text-muted-foreground/80">
+              {t(
+                "The agent accumulates funds from services it provides on-chain. Inspired by the Automaton project — autonomous agents that pay their own way and operate indefinitely.",
+                "El agente acumula fondos de los servicios que provee on-chain. Inspirado en el proyecto Automaton — agentes autónomos que se financian solos y operan indefinidamente.",
+              )}
+            </p>
+            <a
+              href="https://github.com/Conway-Research/automaton"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-black px-2.5 py-1 text-[11px] font-semibold text-amber-400 border border-amber-400/40 underline-offset-2 hover:underline"
+            >
+              Conway-Research/automaton ↗
+            </a>
+          </div>
+          <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-black px-2.5 py-1 text-[10px] font-semibold text-amber-400">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+            {t("In development", "En desarrollo")}
+          </div>
+        </div>
+      </div>
+
+      {/* Balance rows placeholder */}
+      <div className="mx-6 mb-6 rounded-2xl border border-white/8 bg-white/[0.025] p-5">
+        <div className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {t("Balances", "Balances")}
+        </div>
+        <div className="space-y-2">
+          {[
+            { chain: "NEAR", symbol: "NEAR", amount: "–" },
+            { chain: "Avalanche", symbol: "AVAX", amount: "–" },
+            { chain: "Ethereum", symbol: "ETH", amount: "–" },
+          ].map((row) => (
+            <div key={row.chain} className="flex items-center justify-between rounded-xl border border-border/40 bg-white/[0.03] px-3 py-2">
+              <span className="text-xs text-muted-foreground">{row.chain}</span>
+              <span className="font-mono text-xs text-foreground/40">{row.amount} {row.symbol}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -787,29 +952,30 @@ export function SiteMochiLandingSection() {
     void connect();
   };
 
+  const { iconTheme } = config;
   const desktopShortcuts: DesktopConfigShortcutProps[] = [
-    { shortcutKey: "personalize", label: t("Appearance", "Apariencia"), iconUrl: `${ICONS8_DUSK}/paint-palette.png` },
-    { shortcutKey: "marketplace", label: t("Marketplace", "Marketplace"), iconUrl: `${ICONS8_DUSK}/shopping-bag.png` },
-    { shortcutKey: "creator", label: t("Create", "Crear"), iconUrl: `${ICONS8_DUSK}/unicorn.png` },
-    { shortcutKey: "guide", label: t("Guide", "Guía"), iconUrl: `${ICONS8_DUSK}/book.png` },
-    { shortcutKey: "fuel", label: t("Power", "Fondos"), iconUrl: `${ICONS8_DUSK}/electricity.png` },
-    { shortcutKey: "help", label: t("Help", "Ayuda"), iconUrl: `${ICONS8_DUSK}/help.png` },
-    { shortcutKey: "download", label: t("Download", "Descarga"), iconUrl: `${ICONS8_DUSK}/download.png` },
-    { shortcutKey: "soul", configKey: "soul", label: "Soul", iconUrl: `${ICONS8_DUSK}/crown.png` },
-    { shortcutKey: "config", label: t("Config", "Config"), iconUrl: `${ICONS8_DUSK}/settings.png` },
-    { shortcutKey: "memories", label: t("Memories", "Memorias"), iconUrl: `${ICONS8_DUSK}/camera.png` },
+    { shortcutKey: "personalize", label: t("Appearance", "Apariencia"), iconUrl: getShortcutIconUrl("personalize", iconTheme) },
+    { shortcutKey: "marketplace", label: t("Marketplace", "Marketplace"), iconUrl: getShortcutIconUrl("marketplace", iconTheme) },
+    { shortcutKey: "creator", label: t("Create", "Crear"), iconUrl: getShortcutIconUrl("creator", iconTheme) },
+    { shortcutKey: "guide", label: t("Guide", "Guía"), iconUrl: getShortcutIconUrl("guide", iconTheme) },
+    { shortcutKey: "wallet", label: t("Wallet", "Wallet"), iconUrl: getShortcutIconUrl("wallet", iconTheme) },
+    { shortcutKey: "help", label: t("Help", "Ayuda"), iconUrl: getShortcutIconUrl("help", iconTheme) },
+    { shortcutKey: "download", label: t("Download", "Descarga"), iconUrl: getShortcutIconUrl("download", iconTheme) },
+    { shortcutKey: "soul", configKey: "soul", label: "Soul", iconUrl: getShortcutIconUrl("soul", iconTheme) },
+    { shortcutKey: "config", label: t("Config", "Config"), iconUrl: getShortcutIconUrl("config", iconTheme) },
+    { shortcutKey: "memories", label: t("Memories", "Memorias"), iconUrl: getShortcutIconUrl("memories", iconTheme) },
   ];
   const mobileShortcuts: DesktopConfigShortcutProps[] = [
-    { shortcutKey: "personalize", label: t("Appearance", "Apariencia"), iconUrl: `${ICONS8_DUSK}/paint-palette.png` },
-    { shortcutKey: "marketplace", label: t("Marketplace", "Marketplace"), iconUrl: `${ICONS8_DUSK}/shopping-bag.png` },
-    { shortcutKey: "creator", label: t("Create", "Crear"), iconUrl: `${ICONS8_DUSK}/unicorn.png` },
-    { shortcutKey: "guide", label: t("Guide", "Guía"), iconUrl: `${ICONS8_DUSK}/book.png` },
-    { shortcutKey: "fuel", label: t("Power", "Fondos"), iconUrl: `${ICONS8_DUSK}/electricity.png` },
-    { shortcutKey: "help", label: t("Help", "Ayuda"), iconUrl: `${ICONS8_DUSK}/help.png` },
-    { shortcutKey: "download", label: t("Download", "Descarga"), iconUrl: `${ICONS8_DUSK}/download.png` },
-    { shortcutKey: "soul", configKey: "soul", label: "Soul", iconUrl: `${ICONS8_DUSK}/crown.png` },
-    { shortcutKey: "config", label: t("Config", "Config"), iconUrl: `${ICONS8_DUSK}/settings.png` },
-    { shortcutKey: "memories", label: t("Memories", "Memorias"), iconUrl: `${ICONS8_DUSK}/camera.png` },
+    { shortcutKey: "personalize", label: t("Appearance", "Apariencia"), iconUrl: getShortcutIconUrl("personalize", iconTheme) },
+    { shortcutKey: "marketplace", label: t("Marketplace", "Marketplace"), iconUrl: getShortcutIconUrl("marketplace", iconTheme) },
+    { shortcutKey: "creator", label: t("Create", "Crear"), iconUrl: getShortcutIconUrl("creator", iconTheme) },
+    { shortcutKey: "guide", label: t("Guide", "Guía"), iconUrl: getShortcutIconUrl("guide", iconTheme) },
+    { shortcutKey: "wallet", label: t("Wallet", "Wallet"), iconUrl: getShortcutIconUrl("wallet", iconTheme) },
+    { shortcutKey: "help", label: t("Help", "Ayuda"), iconUrl: getShortcutIconUrl("help", iconTheme) },
+    { shortcutKey: "download", label: t("Download", "Descarga"), iconUrl: getShortcutIconUrl("download", iconTheme) },
+    { shortcutKey: "soul", configKey: "soul", label: "Soul", iconUrl: getShortcutIconUrl("soul", iconTheme) },
+    { shortcutKey: "config", label: t("Config", "Config"), iconUrl: getShortcutIconUrl("config", iconTheme) },
+    { shortcutKey: "memories", label: t("Memories", "Memorias"), iconUrl: getShortcutIconUrl("memories", iconTheme) },
   ];
   const mobileShortcutRows = MOBILE_SHORTCUT_ROWS;
   const shortcutByKey = Object.fromEntries(
@@ -849,6 +1015,13 @@ export function SiteMochiLandingSection() {
     return () => {
       resizeObserver.disconnect();
     };
+  }, [activeDesktopWindow]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(
+      new CustomEvent("mochi:desktop-window-state", { detail: { isOpen: activeDesktopWindow !== null } }),
+    );
   }, [activeDesktopWindow]);
 
   useEffect(() => {
@@ -1049,8 +1222,12 @@ export function SiteMochiLandingSection() {
     handleShortcutOpen("marketplace");
   };
 
-  const handleOpenFuelWindow = () => {
-    handleShortcutOpen("fuel");
+  const handleOpenWalletWindow = () => {
+    handleShortcutOpen("wallet");
+  };
+
+  const handleOpenOnchainWindow = () => {
+    handleShortcutOpen("onchain");
   };
 
   const handleShortcutPointerDown = (
@@ -1401,6 +1578,8 @@ export function SiteMochiLandingSection() {
                       ? t("Memories", "Memorias")
                       : activeDesktopWindow === "fuel"
                       ? t("Power", "Fondos")
+                      : activeDesktopWindow === "wallet"
+                      ? t("Agent Wallet", "Wallet del Agente")
                       : activeWindowMeta
                       ? isSpanish
                         ? activeWindowMeta.labelEs
@@ -1473,7 +1652,7 @@ export function SiteMochiLandingSection() {
                       className="h-full w-full border-0 bg-background"
                     />
                   ) : activeDesktopWindow === "config" ? (
-                    <DesktopConfigWindow isSpanish={isSpanish} onOpenFuel={handleOpenFuelWindow} />
+                    <DesktopConfigWindow isSpanish={isSpanish} onOpenWallet={handleOpenWalletWindow} />
                   ) : activeDesktopWindow === "memories" ? (
                     <DesktopMemoriesWindow
                       isSpanish={isSpanish}
@@ -1482,12 +1661,14 @@ export function SiteMochiLandingSection() {
                     />
                   ) : activeDesktopWindow === "fuel" ? (
                     <DesktopFuelWindow isSpanish={isSpanish} />
+                  ) : activeDesktopWindow === "wallet" ? (
+                    <DesktopWalletWindow isSpanish={isSpanish} onOpenOnchain={handleOpenOnchainWindow} />
                   ) : compactConfigActiveTab ? (
                     <SiteMochiCompactConfigWindow
                       activeTab={compactConfigActiveTab}
                       fillHeight
                       onOpenMarketplace={handleOpenMarketplaceWindow}
-                      onOpenFuel={handleOpenFuelWindow}
+                      onOpenWallet={handleOpenWalletWindow}
                     />
                   ) : null}
                 </div>

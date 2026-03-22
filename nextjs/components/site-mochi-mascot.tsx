@@ -324,20 +324,23 @@ async function streamMochiChatReply(args: {
 const SPRITE_SIZE = 72;
 const EDGE_MARGIN = 0;
 const GRAVITY = 980;
-const WALK_SPEED = 76;
+const WALK_SPEED = 40;
 const CLIMB_SPEED = 76;
 const FALL_START_Y = -SPRITE_SIZE;
 const SPARKLE_DURATION = 380;
 const MOBILE_BREAKPOINT = 768;
 const CHAT_GAP = 12;
 const MASCOT_HINT_TEXT = "🐱 Click me";
-const WALK_PAUSE_MIN_MS = 2400;
-const WALK_PAUSE_MAX_MS = 6200;
-const WALK_SEGMENT_MIN_MS = 900;
-const WALK_SEGMENT_MAX_MS = 2200;
-const WALK_PAUSE_REVERSE_CHANCE = 0.2;
+const WALK_PAUSE_MIN_MS = 1600;
+const WALK_PAUSE_MAX_MS = 4500;
+const WALK_SEGMENT_MIN_MS = 1400;
+const WALK_SEGMENT_MAX_MS = 3200;
+const WALK_PAUSE_REVERSE_CHANCE = 0.3;
 const WALL_DIRECTION_FLIP_CHANCE = 0.15;
 const CEILING_DESCEND_WALL_CHANCE = 0.72;
+const CURSOR_NEAR_DIST = 70;
+const CURSOR_STEER_DIST = 300;
+const MOCHI_DESKTOP_WINDOW_EVENT = "mochi:desktop-window-state";
 const SITE_MOCHI_CHAT_HISTORY_STORAGE_KEY = "site-mochi-chat-history-v1";
 const SITE_MOCHI_CHAT_HISTORY_UPDATED_EVENT = "site-mochi:chat-history-updated";
 const MAX_STORED_CHAT_MESSAGES = 40;
@@ -346,10 +349,10 @@ type Edge = "bottom" | "right" | "top" | "left";
 type MascotState = "falling" | "floor-walking" | "wall-climbing" | "ceiling-walking";
 type WallSide = "left" | "right";
 
-const NEJO_HACKATHON_KEY = "nejo";
+const NEJO_HACKATHON_KEY = "mochi";
 
 class NejoHackathonMotionPolicy {
-  private readonly active: boolean;
+  readonly active: boolean;
   private readonly sprites: Set<string>;
 
   constructor(characterKey: string, availableSpriteFiles?: string[] | null) {
@@ -585,8 +588,12 @@ export function SiteMochiMascot() {
   const wallSideRef = useRef<WallSide>("right");
   const wallDirRef = useRef<1 | -1>(-1);
   const floorDirRef = useRef<1 | -1>(Math.random() < 0.5 ? -1 : 1);
+  const floorDirYRef = useRef<1 | -1>(-1);
   const ceilingDirRef = useRef<1 | -1>(1);
   const fallVelocityRef = useRef(0);
+  const mousePosRef = useRef<{ x: number; y: number } | null>(null);
+  const isNejoModeRef = useRef(false);
+  const hasDesktopWindowRef = useRef(false);
   const wanderPauseRef = useRef<WanderPauseState>({
     nextPauseAt: 0,
     pauseUntil: 0,
@@ -611,6 +618,22 @@ export function SiteMochiMascot() {
   useEffect(() => {
     spriteScaleRef.current = clamp(config.sizePercent / 100, 0.6, 1.8);
   }, [config.sizePercent]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mousePosRef.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  useEffect(() => {
+    const handle = (e: Event) => {
+      hasDesktopWindowRef.current = Boolean((e as CustomEvent).detail?.isOpen);
+    };
+    window.addEventListener(MOCHI_DESKTOP_WINDOW_EVENT, handle);
+    return () => window.removeEventListener(MOCHI_DESKTOP_WINDOW_EVENT, handle);
+  }, []);
 
   useEffect(() => {
     setSpeechInputSupported(Boolean(getSpeechRecognitionConstructor()));
@@ -655,6 +678,10 @@ export function SiteMochiMascot() {
       new NejoHackathonMotionPolicy(config.character, selectedCharacter?.availableSpriteFiles),
     [config.character, selectedCharacter?.availableSpriteFiles],
   );
+
+  useEffect(() => {
+    isNejoModeRef.current = nejoPolicy.active;
+  }, [nejoPolicy]);
 
   const setMovementState = useCallback(
     (state: MascotState) => {
@@ -980,15 +1007,24 @@ export function SiteMochiMascot() {
             pauseState.pauseUntil + WALK_SEGMENT_MIN_MS + Math.random() * (WALK_SEGMENT_MAX_MS - WALK_SEGMENT_MIN_MS);
           if (Math.random() < WALK_PAUSE_REVERSE_CHANCE) {
             if (state === "floor-walking") {
-              floorDirRef.current = floorDirRef.current === 1 ? -1 : 1;
-            } else if (state === "ceiling-walking") {
-              ceilingDirRef.current = ceilingDirRef.current === 1 ? -1 : 1;
-            } else if (Math.random() < WALL_DIRECTION_FLIP_CHANCE) {
-              wallDirRef.current = wallDirRef.current === 1 ? -1 : 1;
+              if (Math.random() < 0.6) floorDirRef.current = floorDirRef.current === 1 ? -1 : 1;
+              if (!hasDesktopWindowRef.current && Math.random() < 0.4) {
+                floorDirYRef.current = floorDirYRef.current === 1 ? -1 : 1;
+              }
             }
           }
         }
-        const isWalkPaused = canPauseWhileWalking && pauseState.pauseUntil > time;
+        // Cursor proximity check
+        const mouse = mousePosRef.current;
+        const charCenterX = next.x + SPRITE_SIZE / 2;
+        const charCenterY = next.y + SPRITE_SIZE / 2;
+        const cursorDist = mouse
+          ? Math.sqrt((mouse.x - charCenterX) ** 2 + (mouse.y - charCenterY) ** 2)
+          : Infinity;
+        const isCursorNear = cursorDist < CURSOR_NEAR_DIST;
+
+        const isWalkPaused = (canPauseWhileWalking && pauseState.pauseUntil > time) || isCursorNear;
+        const windowOpen = hasDesktopWindowRef.current;
 
         if (state === "falling") {
           fallVelocityRef.current += GRAVITY * dt;
@@ -999,61 +1035,51 @@ export function SiteMochiMascot() {
             fallVelocityRef.current = 0;
             setMovementState("floor-walking");
             floorDirRef.current = Math.random() < 0.5 ? -1 : 1;
+            floorDirYRef.current = windowOpen ? 1 : -1;
           }
         } else if (state === "floor-walking") {
-          next.y = bounds.maxY;
-          if (!isWalkPaused) {
-            next.x += floorDirRef.current * WALK_SPEED * dt;
-          }
-          if (next.x <= bounds.minX) {
-            next.x = bounds.minX;
-            wallSideRef.current = "left";
-            setMovementState("wall-climbing");
-            wallDirRef.current = -1;
-          } else if (next.x >= bounds.maxX) {
-            next.x = bounds.maxX;
-            wallSideRef.current = "right";
-            setMovementState("wall-climbing");
-            wallDirRef.current = -1;
+          if (windowOpen) {
+            // Drift to floor and walk horizontally when a window is open
+            const atFloor = next.y >= bounds.maxY - 4;
+            if (!atFloor) {
+              // Sink toward floor
+              next.y += WALK_SPEED * 1.5 * dt;
+              next.x += floorDirRef.current * WALK_SPEED * dt;
+            } else {
+              next.y = bounds.maxY;
+              if (!isWalkPaused) {
+                next.x += floorDirRef.current * WALK_SPEED * dt;
+              }
+            }
+            if (next.x <= bounds.minX) { next.x = bounds.minX; floorDirRef.current = 1; }
+            else if (next.x >= bounds.maxX) { next.x = bounds.maxX; floorDirRef.current = -1; }
+          } else {
+            // Free 2D wander: steer toward cursor, bounce off all edges
+            if (!isCursorNear && mouse && cursorDist < CURSOR_STEER_DIST) {
+              const dx = mouse.x - charCenterX;
+              const dy = mouse.y - charCenterY;
+              if (Math.abs(dx) > 12) floorDirRef.current = dx > 0 ? 1 : -1;
+              if (Math.abs(dy) > 12) floorDirYRef.current = dy > 0 ? 1 : -1;
+            }
+            if (!isWalkPaused) {
+              next.x += floorDirRef.current * WALK_SPEED * dt;
+              next.y += floorDirYRef.current * WALK_SPEED * 0.7 * dt;
+            }
+            if (next.x <= bounds.minX) { next.x = bounds.minX; floorDirRef.current = 1; }
+            else if (next.x >= bounds.maxX) { next.x = bounds.maxX; floorDirRef.current = -1; }
+            if (next.y <= bounds.minY) { next.y = bounds.minY; floorDirYRef.current = 1; }
+            else if (next.y >= bounds.maxY) { next.y = bounds.maxY; floorDirYRef.current = -1; }
           }
         } else if (state === "wall-climbing") {
-          next.x = wallSideRef.current === "left" ? bounds.minX : bounds.maxX;
-          if (!isWalkPaused) {
-            next.y += wallDirRef.current * CLIMB_SPEED * dt;
-          }
-          if (next.y <= bounds.minY) {
-            next.y = bounds.minY;
-            setMovementState("ceiling-walking");
-            ceilingDirRef.current = wallSideRef.current === "left" ? 1 : -1;
-          } else if (next.y >= bounds.maxY) {
-            next.y = bounds.maxY;
-            setMovementState("floor-walking");
-            floorDirRef.current = wallSideRef.current === "left" ? 1 : -1;
-          }
+          // Wall/ceiling states can still occur for non-mochi characters that entered them before
+          // Redirect to floor-walking safely
+          setMovementState("floor-walking");
+          floorDirRef.current = wallSideRef.current === "left" ? 1 : -1;
+          floorDirYRef.current = -1;
         } else {
-          next.y = bounds.minY;
-          if (!isWalkPaused) {
-            next.x += ceilingDirRef.current * WALK_SPEED * dt;
-          }
-          if (next.x <= bounds.minX) {
-            next.x = bounds.minX;
-            if (Math.random() < CEILING_DESCEND_WALL_CHANCE) {
-              setMovementState("wall-climbing");
-              wallSideRef.current = "left";
-              wallDirRef.current = 1;
-            } else {
-              ceilingDirRef.current = 1;
-            }
-          } else if (next.x >= bounds.maxX) {
-            next.x = bounds.maxX;
-            if (Math.random() < CEILING_DESCEND_WALL_CHANCE) {
-              setMovementState("wall-climbing");
-              wallSideRef.current = "right";
-              wallDirRef.current = 1;
-            } else {
-              ceilingDirRef.current = -1;
-            }
-          }
+          // ceiling-walking: redirect to floor-walking
+          setMovementState("floor-walking");
+          floorDirYRef.current = 1;
         }
 
         targetPos = clampToMotionBounds(next.x, next.y, bounds);
@@ -2208,7 +2234,7 @@ function handleBubblePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
               {isSpanish ? "🐱 Clickeame" : MASCOT_HINT_TEXT}
             </div>
           )}
-          <img className={styles.sprite} src={frames.stand} alt="" ref={imgRef} draggable={false} />
+          <img className={styles.sprite} src={frames.stand} alt="" ref={imgRef} draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = frames.stand; }} />
           {isJumping && (
             <div className="absolute inset-0 pointer-events-none">
               <span className="absolute top-1/4 left-0 text-xl animate-ping">✦</span>
