@@ -1,6 +1,7 @@
-# Mochi 🐱🐰
+# Mochi Agents
 
-Animated desktop pets with AI chat plus an Avalanche marketplace stack.
+Finding developer!!!
+Actually a animated desktop pets with AI chat 
 
 ## Technical Overview
 
