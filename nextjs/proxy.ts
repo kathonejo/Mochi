@@ -30,7 +30,7 @@ const VALID_PREFIXES = [
 // Next.js static file server can handle them.
 const STATIC_EXT = /\.(png|svg|jpg|jpeg|gif|webp|ico|wav|mp3|md|txt|xml|webmanifest|json)$/i;
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow root and all known prefixes through.
