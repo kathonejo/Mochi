@@ -1,6 +1,5 @@
 # Mochi Agents
 
-Finding developer!!!
 Actually a animated desktop pets with AI chat 
 
 ## Technical Overview
