@@ -1613,6 +1613,7 @@ export function SiteMochiMascot() {
         bubbleEl.style.left = `${Math.round(nextLeft)}px`;
         bubbleEl.style.top = `${Math.round(nextTop)}px`;
         bubbleRectRef.current = { left: nextLeft, top: nextTop };
+        blockClickRef.current = true;
 
         if (event.cancelable) {
           event.preventDefault();
@@ -2183,7 +2184,6 @@ function handleBubblePointerLeave() {
 
 function handleBubblePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (isBubbleFullscreen) return;
-    if (event.pointerType && event.pointerType !== "mouse") return;
     if (!bubbleRef.current) return;
     const target = event.target as HTMLElement | null;
     if (target?.closest("input, button, textarea, select, a")) return;
@@ -2226,6 +2226,7 @@ function handleBubblePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     } catch {
       // no-op
     }
+    blockClickRef.current = true;
     event.stopPropagation();
     event.preventDefault();
   }
