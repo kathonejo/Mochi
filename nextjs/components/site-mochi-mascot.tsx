@@ -1214,6 +1214,45 @@ export function SiteMochiMascot() {
     setVoiceStatus(message);
   }
 
+  const repositionBubbleNearMochi = useCallback(() => {
+    const bubbleEl = bubbleRef.current;
+    if (!bubbleEl) return;
+    const bounds = getBoundsFromWindow(spriteScaleRef.current);
+    const mascotPos = currentPosRef.current;
+    const { width: viewportWidth, height: viewportHeight } = getViewportSize();
+    const margin = 8;
+    const gap = CHAT_GAP;
+    const bubbleWidth = Math.min(bubbleEl.offsetWidth || 340, viewportWidth - margin * 2);
+    const bubbleHeight = bubbleEl.offsetHeight || 320;
+    const isMobile = viewportWidth < MOBILE_BREAKPOINT;
+    const nearestEdge = getNearestEdge(bounds, mascotPos.x, mascotPos.y);
+    const centerX = mascotPos.x + SPRITE_SIZE / 2;
+    const centerY = mascotPos.y + SPRITE_SIZE / 2;
+
+    let left = centerX - bubbleWidth / 2;
+    let top = mascotPos.y - bubbleHeight - gap;
+
+    if (isMobile) {
+      left = (viewportWidth - bubbleWidth) / 2;
+      top = viewportHeight - bubbleHeight - margin;
+    } else if (nearestEdge === "top") {
+      top = mascotPos.y + SPRITE_SIZE + gap;
+    } else if (nearestEdge === "left") {
+      left = mascotPos.x + SPRITE_SIZE + gap;
+      top = centerY - bubbleHeight / 2;
+    } else if (nearestEdge === "right") {
+      left = mascotPos.x - bubbleWidth - gap;
+      top = centerY - bubbleHeight / 2;
+    }
+
+    left = clamp(left, margin, viewportWidth - bubbleWidth - margin);
+    top = clamp(top, margin, viewportHeight - bubbleHeight - margin);
+
+    bubbleRectRef.current = { left, top };
+    bubbleEl.style.left = `${Math.round(left)}px`;
+    bubbleEl.style.top = `${Math.round(top)}px`;
+  }, []);
+
   function clearVoiceAutoSendCountdown() {
     if (voiceAutoSendTimeoutRef.current !== null) {
       window.clearTimeout(voiceAutoSendTimeoutRef.current);
@@ -2264,6 +2303,14 @@ function handleBubblePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    bubbleDraggedManuallyRef.current = false;
+    requestAnimationFrame(() => {
+      repositionBubbleNearMochi();
+    });
+  }, [open, repositionBubbleNearMochi]);
+
   if (!config.enabled || pathname !== "/") {
     return null;
   }
@@ -2379,6 +2426,7 @@ function handleBubblePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
                 className={styles.closeBtn}
                 onClick={() => {
                   setIsBubbleFullscreen(false);
+                  bubbleDraggedManuallyRef.current = false;
                   setOpen(false);
                 }}
                 aria-label={isSpanish ? "Cerrar chat" : "Close chat"}
