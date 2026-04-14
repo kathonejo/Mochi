@@ -80,6 +80,7 @@
   flex-direction: column;
   position: relative;
   color: var(--bubble-text, #16111f);
+  touch-action: none;
 }
 
 .bubbleFixed {
@@ -148,6 +149,13 @@
   padding: 10px 12px 8px;
   border-bottom: 1px solid var(--bubble-header-border);
   background: color-mix(in srgb, var(--chat-bg) 92%, transparent);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bubbleHeader:active {
+  cursor: grabbing;
 }
 
 .titleWrap {
